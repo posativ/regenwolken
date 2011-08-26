@@ -1,16 +1,23 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
+# 
+# Copyright 2011 posativ <info@posativ.org>. All rights reserved.
+# License: BSD Style, 2 clauses.
+#
+#
+# Wolken is a Cloud.app clone, with leave the cloud in mind.
+#
+# `srv/wolken.py` is a simple webserver, allows you to POST and GET files.
 
 import sys
 import os
-from os.path import join, isfile, isdir, getmtime, basename
+from os.path import join, isdir, getmtime, basename
 from datetime import timedelta, datetime
 
 from bottle import route, run, post, request, response
 from bottle import HTTPResponse, HTTPError
 
 import hashlib
-import base64
 import mimetypes
 import time
 
@@ -18,6 +25,7 @@ FS_LIMIT = 100*2**20 # 100 Megabyte
 HASH = '24efc4e1d8d7c2deedb8dbd6fb701ae1a7876775' # =~ "HalloWelt
 
 def ttl2timedelta(s):
+    """converts :digit:[m|h|d|w] into their equivalent datetime objects"""
     
     if not filter(lambda c: c in s, 'mhdw'):
         print >> sys.stderr, 'only m, h, d and w is supported in ttl'
@@ -36,7 +44,9 @@ def ttl2timedelta(s):
     else:
         timedelta(weeks=i)
         
-def hash(f, bs=128, length=12, encode=lambda x: x):#encode=base64.b32encode):
+def hash(f, bs=128, length=12, encode=lambda x: x):
+    """returns a truncated md5 hash of given file."""
+    
     md5 = hashlib.md5()
     while True:
         data = f.read(bs)
@@ -46,6 +56,7 @@ def hash(f, bs=128, length=12, encode=lambda x: x):#encode=base64.b32encode):
     return encode(md5.hexdigest()).strip('=').lower()[:length]
 
 def walk(path):
+    """recursive filelisting"""
     filelist = []
     for root, dirs, files in os.walk(path):
         for file in files:
@@ -121,8 +132,9 @@ def upload():
         data.file.seek(0)
 
 @route('/:mode#raw|inline#/:hash')
-#@route('/inline/:hash')
 def get(mode, hash):
+    """maps to /raw|inline/md5hash and returns the file either in download
+    mode or inline."""
     
     filename = Storage.get(hash)
     if filename:
