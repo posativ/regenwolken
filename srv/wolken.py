@@ -9,7 +9,8 @@
 #
 # `srv/wolken.py` is a simple webserver, allows you to POST and GET files.
 
-import sys
+import sys; reload(sys)
+sys.setdefaultencoding('utf-8')
 import os
 from os.path import join, isdir, getmtime, basename
 from datetime import timedelta, datetime
@@ -20,6 +21,13 @@ from bottle import HTTPResponse, HTTPError
 import hashlib
 import mimetypes
 import time
+
+import json
+import base64
+
+from pymongo import Connection
+import gridfs
+from bson.objectid import ObjectId
 
 FS_LIMIT = 100*2**20 # 100 Megabyte
 HASH = '24efc4e1d8d7c2deedb8dbd6fb701ae1a7876775' # =~ "HalloWelt
@@ -62,7 +70,6 @@ def walk(path):
         for file in files:
             filelist.append(join(root, file))
     return filelist
-
 
 class FileStorage:
     """Wrapper class for all file access related things."""
@@ -110,58 +117,163 @@ class FileStorage:
             if ts + self.ttl < now:
                 print '\'', path, '\'', 'is more than', self.ttl, 'old'
 
-Storage = FileStorage('data')
-print Storage.db.keys()
+# Storage = FileStorage('data')
+# print Storage.db.keys()
+# 
+# @post('/file/')
+# def upload():
+#     #response.headers['Content-Type'] = 'application/json'
+#     response.headers['Content-Type'] = 'text/plain'
+#     
+#     # TODO: 
+#     passwd = request.forms.get('passwd', None)
+#     if passwd == None or not hashlib.sha1(passwd).hexdigest() == HASH:
+#         return HTTPError(403, "Access denied.")
+#     
+#     data = request.files.get('data', None)
+#     if data != None:
+#         data.file.seek(0, 2)
+#         size = data.file.tell()
+#         if size > FS_LIMIT: # 1 MiB file limit
+#             return 'file too big'
+#         data.file.seek(0)
+# 
+# @route('/:mode#raw|inline#/:hash')
+# def get(mode, hash):
+#     """maps to /raw|inline/md5hash and returns the file either in download
+#     mode or inline."""
+#     
+#     filename = Storage.get(hash)
+#     if filename:
+#         header = dict()
+#         mimetype, encoding = mimetypes.guess_type(filename)
+#         if mimetype: header['Content-Type'] = mimetype
+#         if encoding: header['Content-Encoding'] = encoding
+#         
+#         if mode == 'raw':
+#             name = basename(filename)
+#             header['Content-Disposition'] = 'attachment; filename="%s"' % name
+#             
+#         stats = os.stat(filename)
+#         header['Content-Length'] = stats.st_size
+#         lm = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(stats.st_mtime))
+#         header['Last-Modified'] = lm
+#         
+#         body = '' if request.method == 'HEAD' else open(filename, 'rb')
+#         return HTTPResponse(body, header=header)
 
-@post('/file/')
+@post('/')
 def upload():
-    #response.headers['Content-Type'] = 'application/json'
-    response.headers['Content-Type'] = 'text/plain'
     
-    # TODO: 
-    passwd = request.forms.get('passwd', None)
-    if passwd == None or not hashlib.sha1(passwd).hexdigest() == HASH:
-        return HTTPError(403, "Access denied.")
+    for key in request.header.keys():
+        print key + ':', request.header[key]
     
-    data = request.files.get('data', None)
-    if data != None:
-        data.file.seek(0, 2)
-        size = data.file.tell()
-        if size > FS_LIMIT: # 1 MiB file limit
-            return 'file too big'
-        data.file.seek(0)
+    for key in ['acl', 'signature', 'key', 'AWSAccessKeyId', 'success_action_redirect', 'policy']:
+        print request.forms.get(key)
+        
+    ts = time.strftime('%Y-%m-%dT%H:%M:%SZ'),
+    
+    obj = request.files.get('file')
+    id = fs.put(obj.file, filename=obj.filename, upload_date=ts, content_type='image/png')
+    print id
+    
+    
+    # f = open('test.png', 'w')
+    # while True:
+    #     data = obj.file.read(1024)
+    #     f.write(data)
+    #     if not data:
+    #         break
+    # f.close()
+    
+    d = { "name": obj.filename,
+          "href": "http://localhost/items/" + str(id),
+          "content_url": "http://localhost/items/"+ str(id),
+          "created_at": ts,
+          "redirect_url": None,
+          "deleted_at": None,
+          "private":True,
+          "updated_at": ts,
+          "remote_url": "http://f.cl.ly/items/070c0T2I0y3p0p3P053c/Bildschirmfoto%202011-08-26%20um%2022.14.39.png",
+          "view_counter": 0,
+          "url": "http://localhost/items/"+ str(id),
+          "id": 8793473, "icon": "http://my.cl.ly/images/new/item-types/image.png",
+          "thumbnail_url": "http://thumbs.cl.ly/2r3h0z2r3z2c1S2z2S3a",
+          "subscribed": False, "source": "Cloud/1.5.1 CFNetwork/520.0.13 Darwin/11.1.0 (x86_64) (MacBookPro6,2)",
+          "item_type": "image"}
+    return HTTPResponse(json.dumps(d), header={'Content-Type': 'application/json; charset=utf-8'})
+    
 
-@route('/:mode#raw|inline#/:hash')
-def get(mode, hash):
-    """maps to /raw|inline/md5hash and returns the file either in download
-    mode or inline."""
+@route('/raindrops/com.linebreak.Raindrop.Screenshots')
+def screenshots():
+    return HTTPResponse(json.dump(
+                { "bundle_id": "com.linebreak.Raindrop.Screenshots",
+                  "version":"1.0", "creator":"Line,  break S.L.",
+                  "url": "http://getcloudapp.com/",
+                  "name":"Screenshots",
+                  "description":"Automatically uploads screenshot files."}),
+                  header={'Content-Type': 'application/json'})
+
+@route('/items/new')          
+def new():
+    d = { "uploads_remaining": 5,
+          "url": "http://f.cl.ly",
+          "max_upload_size": 26214400,
+          "params":
+            { "policy": base64.standard_b64encode('{"expiration":"2011-08-26T20:29:44Z","conditions":[{"bucket":"f.cl.ly"},{"acl":"public-read"},{"success_action_redirect":"http://my.cl.ly/items/s3"},["content-length-range",0,26214400],["starts-with","$key","items/070c0T2I0y3p0p3P053c/"]]}'),
+              "AWSAccessKeyId": "AKIAIDPUZISHSBEOFS6Q",
+              "signature": "d4OuGSlvNoy+8HaC939eMyirP5k=",
+              "success_action_redirect": "http://my.cl.ly/items/s3",
+              "key":"items/070c0T2I0y3p0p3P053c/${filename}",
+              "acl":"public-read"
+            },
+        }
+    return HTTPResponse(json.dumps(d),
+                header={'Content-Type': 'application/json; charset=utf-8'})
+                
+@route('items/:id')
+def get(id):
     
-    filename = Storage.get(hash)
-    if filename:
-        header = dict()
-        mimetype, encoding = mimetypes.guess_type(filename)
-        if mimetype: header['Content-Type'] = mimetype
-        if encoding: header['Content-Encoding'] = encoding
+    id = ObjectId(id)
+    return HTTPResponse(fs.get(id).read(), header={'Content-Type': 'image/png'})
+    
+
+@route('/:identifier')
+def index(identifier):
+    
+    if identifier == 'account':
         
-        if mode == 'raw':
-            name = basename(filename)
-            header['Content-Disposition'] = 'attachment; filename="%s"' % name
-            
-        stats = os.stat(filename)
-        header['Content-Length'] = stats.st_size
-        lm = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(stats.st_mtime))
-        header['Last-Modified'] = lm
+        d = { "created_at":"2011-07-26T14:26:51Z",
+              "activated_at":"2011-07-26T14:32:48Z",
+              "subscription_expires_at": None,
+              "updated_at":"2011-07-26T14:32:48Z",
+              "domain": None, "id":12345,
+              "subscribed": False,
+              "private_items": True,
+              "domain_home_page": None,
+              "socket": {
+                    "api_key": "4f6dbc3b89fa4ee9a8ff",
+                    "app_id":"4721",
+                    "auth_url":
+                    "http://my.cl.ly/pusher/auth",
+                    "channels":{"items":"private-items_565387"}
+                },
+              "email": "info@example.org",
+              "alpha": False }
+              
+        body = json.dumps(d)
         
-        body = '' if request.method == 'HEAD' else open(filename, 'rb')
+        header = {}
+        header['Content-Length'] = len(body)
+        header['Content-Type'] = 'application/json; charset=utf-8'
+        
         return HTTPResponse(body, header=header)
-    
 
 if __name__ == '__main__':
     
-    DEBUG = True
+    import bottle; bottle.debug(True)
     
-    if DEBUG:
-        import bottle
-        bottle.debug(True)
-        
-    run(host='localhost', port=8000)
+    db = Connection('localhost', 27017)['cloud']
+    fs = gridfs.GridFS(db)
+    
+    run(host='localhost', port=80)
