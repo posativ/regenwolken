@@ -21,6 +21,7 @@ from bottle import HTTPResponse, HTTPError
 import hashlib
 import mimetypes
 import time
+import random
 
 import json
 import base64
@@ -112,7 +113,7 @@ def upload():
         print key + ':', request.header[key]
     
     for key in ['acl', 'signature', 'key', 'AWSAccessKeyId', 'success_action_redirect', 'policy']:
-        print request.forms.get(key)
+        print key, request.forms.get(key)
     
     ts = time.strftime('%Y-%m-%dT%H:%M:%SZ')
     obj = request.files.get('file')
@@ -168,12 +169,13 @@ def get(id):
 @route('/account')
 def auth():
     
-    users = {'blubber@kekse': 'qq'} 
+    users = {'leave@thecloud': 'now'} 
     
     def md5(data):
         return hashlib.md5(data).hexdigest()
     
     def htdigest():
+        '''beginning HTTP Digest Authentication'''
         
         realm = 'Application'
         nonce = md5("%d:%s" % (time.time(), realm))
@@ -194,59 +196,51 @@ def auth():
                       auth['qop'], md5(A2(request))])
         return md5(A1(auth, digest) + ':' + b)
         
-    for key in request.header.keys():
-        print key + ':', request.header[key]
-        
     digest = htdigest()
+    HTTPAuth = HTTPError(401, "Unauthorized.", header={'WWW-Authenticate':
+                    ('Digest realm="%(realm)s", nonce="%(nonce)s", '
+                     'algorithm="MD5", qop=%(auth)s' % digest)})
         
     if 'Authorization' in request.header:
         
         auth = request.header['Authorization'].replace('Digest ', '').split(',')
         auth = dict([x.strip().replace('"', '').split('=') for x in auth])
         
-        if 'qop' in auth:
-            if response(auth, digest) == auth['response']:
-                return HTTPResponse('Yoooo')
-            
-        else:
+        if filter(lambda k: not k in auth, ['qop', 'username', 'nonce', 'response', 'uri']):
             print >> sys.stderr, 'only `qop` authentication is implemented'
             print >> sys.stderr, 'see', 'http://code.activestate.com/recipes/302378-digest-authentication/'
+            return HTTPError(403, 'Unauthorized')
+            
+        if response(auth, digest) == auth['response']:
+            
+            rnd_time = time.gmtime(time.time() - 1000*random.random())
+            ts = time.strftime('%Y-%m-%dT%H:%M:%SZ', rnd_time)
+            d = { "created_at": ts, "activated_at": ts,
+                  "subscription_expires_at": None,
+                  "updated_at": ts, "subscribed": False,
+                  "domain": 'localhost', "id": 12345,
+                  "private_items": True,
+                  "domain_home_page": None,
+                  "email": "info@example.org",
+                  "alpha": False
+                 }
+          
+            body = json.dumps(d)
+            header = {}
+            header['Content-Length'] = len(body)
+            header['Content-Type'] = 'application/json; charset=utf-8'
+            return HTTPResponse(body, header=header)
+            
+        else:
+            return HTTPAuth
         
-        header = {}
-        # header['Content-Length'] = len(body)
-        # header['Content-Type'] = 'application/json; charset=utf-8'
-        #     
-        # header['WWW-Authenticate'] = ('Digest realm="%(realm)s", nonce="%(nonce)s", '
-        #                               'algorithm="MD5", qop=%(auth)s' % digest)
-        # 
-        return HTTPError(401, "Unauthorized.", header=header)
-    
-    else:
-        
-        header = {'WWW-Authenticate': ('Digest realm="%(realm)s", nonce="%(nonce)s", '
-                                      'algorithm="MD5", qop=%(auth)s' % digest)}
-                                      
-        return HTTPError(401, "Unauthorized", header=header)
-    
-        d = { "created_at":"2011-07-26T14:26:51Z",
-              "activated_at":"2011-07-26T14:32:48Z",
-              "subscription_expires_at": None,
-              "updated_at":"2011-07-26T14:32:48Z",
-              "domain": 'localhost', "id": 12345,
-              "subscribed": True,
-              "private_items": True,
-              "domain_home_page": None,
-              "email": "info@example.org",
-              "alpha": False }
-              
-        body = json.dumps(d)
-        
-        
+    else:       
+        return HTTPAuth
         
 
 if __name__ == '__main__':
     
-    import bottle; bottle.debug(True)
+    #import bottle; bottle.debug(True)
     
     db = Connection('localhost', 27017)['cloud']
     fs = gridfs.GridFS(db)
