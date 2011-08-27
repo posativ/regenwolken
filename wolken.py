@@ -61,7 +61,7 @@ class Item(dict):
         for k,v in __dict__.iteritems():
             self[k] = v
         self.update(**kw)
-        
+    
     def to_dict(self):
         return self.dict
 
@@ -76,21 +76,21 @@ class Sessions:
     
     def __init__(self):
         self.db = {}
-        
+    
     def __repr__(self):
         L = []
         for item in sorted(self.db.keys(), key=lambda k: k[0]):
             L.append('%s\t%s, %s' % (item, self.db[item][0], self.db[item][1]))
         return '\n'.join(L)
-
+    
     def __contains__(self, item):
         self._outdated()
         return True if self.db.has_key(item) else False
-        
+    
     def _outdated(self):
         '''automatic cleanup of outdated sessions, 15 min time-to-live'''
-        self.db = dict([(k, v) for k,v in self.db.items() if (time.time() - v[0]) <= 60*15])
-        
+        self.db = dict([(k, v) for k,v in self.db.items() if (time.time() - v[0]) <= 60])
+    
     def get(self, session_id):
         '''returns session id'''
         self._outdated()
@@ -99,7 +99,7 @@ class Sessions:
                 return self.db[session_id][1]
         else:
             raise KeyError(session_id)
-            
+    
     def new(self):
         '''returns new session id'''
         
@@ -145,18 +145,66 @@ def hash(f, bs=128, length=12, encode=lambda x: x):
 #         body = '' if request.method == 'HEAD' else open(filename, 'rb')
 #         return HTTPResponse(body, header=header)
 
+def authenticate(uri):
+    
+    users = {'leave@thecloud': 'now'}
+    
+    def md5(data):
+        return hashlib.md5(data).hexdigest()
+    
+    def htdigest():
+        '''beginning HTTP Digest Authentication'''
+        
+        realm = 'Application'
+        nonce = md5("%d:%s" % (time.time(), realm))
+        qop = 'auth'
+        return {'nonce': nonce, 'realm': realm, 'auth': qop}
+    
+    def result(auth, digest, uri):
+        """calculates  digest response (MD5 and qop)"""
+        
+        def A1(auth, digest):
+            passwd = users.get(auth['username'], '')
+            return md5(auth['username'] + ':' + digest['realm'] + ':' + passwd)
+        
+        def A2(request, uri):
+            return request.method + ':' + uri
+        
+        b = ':'.join([auth['nonce'], auth['nc'], auth['cnonce'],
+                      auth['qop'], md5(A2(request, uri))])
+        return md5(A1(auth, digest) + ':' + b)
+    
+    digest = htdigest()
+    HTTPAuth = HTTPError(401, "Unauthorized.", header={'WWW-Authenticate':
+                    ('Digest realm="%(realm)s", nonce="%(nonce)s", '
+                     'algorithm="MD5", qop=%(auth)s' % digest)})
+    
+    if 'Authorization' in request.header:
+        
+        auth = request.header['Authorization'].replace('Digest ', '').split(',')
+        auth = dict([x.strip().replace('"', '').split('=') for x in auth])
+        
+        if filter(lambda k: not k in auth, ['qop', 'username', 'nonce', 'response', 'uri']):
+            print >> sys.stderr, 'only `qop` authentication is implemented'
+            print >> sys.stderr, 'see', 'http://code.activestate.com/recipes/302378-digest-authentication/'
+            return HTTPError(403, 'Unauthorized')
+        
+        if result(auth, digest, uri) == auth['response']:
+            session_id = sessions.new()
+            if sys.version_info[0] == 2 and sys.version_info[1] < 6:
+                response.set_cookie('_engine_session', session_id, path='/')
+            else:
+                response.set_cookie('_engine_session', session_id, path='/', httponly=True)
+            return True
+    
+    return HTTPAuth
+
+
 @post('/')
 def upload():
-
-    # python2.5 fails with these four lines
-    for key in request.header.keys():
-        print key + ':', request.header[key]
-        
-    print request.forms.keys()
-    print repr(request.files['file'])
     
-    # for key in ['acl', 'signature', 'key', 'AWSAccessKeyId', 'success_action_redirect', 'policy']:
-    #     print key, request.forms.get(key)
+    if not request.forms.get('key') in sessions:
+        return HTTPError(403, 'Unauthorized')
     
     ts = time.strftime('%Y-%m-%dT%H:%M:%SZ')
     obj = request.files.get('file')
@@ -201,31 +249,34 @@ def items():
     List = []
     for x in range(int(params['per_page'])):
         List.append(Item(name="Item Dummy %s" % (x+1)))
-        
-    response.headers['Content-Type'] = 'application/json; charset=utf-8'
-        
-    return json.dumps(List)
     
+    response.headers['Content-Type'] = 'application/json; charset=utf-8'
+    response.set_cookie('_engine_session', c)
+    
+    return json.dumps(List)
+
 
 @route('/items/new')
 def new():
     
-    # for key in request.header:
-    #     print key+':', request.header[key]
-    c = request.get_cookie('_engine_session')
+    # c = request.get_cookie('_engine_session')
+    # if not c in sessions:
     
-    if c in sessions or True:
+    HTTPAuth = authenticate('/items/new')
+    if HTTPAuth != True:
+        return HTTPAuth
     
-        d = { "url": "http://my.cl.ly",
-              #"params": { "acl":"public-read", 'signature': sessions.get(c) },
-              "params": { "acl":"public-read",
-                          "signature": "session..."
-                        },
-            }
-        return HTTPResponse(json.dumps(d),
-                    header={'Content-Type': 'application/json; charset=utf-8'})
-    else:
-        return HTTPError(403, 'Unauthorized.')
+    id = sessions.new()
+    print id
+    
+    d = { "url": "http://my.cl.ly",
+          #"params": { "acl":"public-read", 'signature': sessions.get(c) },
+          "params": { "acl":"public-read",
+                      "key": id
+                    },
+        }
+    return HTTPResponse(json.dumps(d),
+                header={'Content-Type': 'application/json; charset=utf-8'})
 
 @route('/items/:id')
 def get(id):
@@ -236,90 +287,39 @@ def get(id):
 
 
 @route('/account')
-def auth():
+def account():
     
-    users = {'leave@thecloud': 'now'}
-    
-    def md5(data):
-        return hashlib.md5(data).hexdigest()
-    
-    def htdigest():
-        '''beginning HTTP Digest Authentication'''
-        
-        realm = 'Application'
-        nonce = md5("%d:%s" % (time.time(), realm))
-        qop = 'auth'
-        return {'nonce': nonce, 'realm': realm, 'auth': qop}
-    
-    def result(auth, digest):
-        """calculates  digest response (MD5 and qop)"""
-        
-        def A1(auth, digest):
-            passwd = users.get(auth['username'], '')
-            return md5(auth['username'] + ':' + digest['realm'] + ':' + passwd)
-        
-        def A2(request):
-            return request.method + ':' + '/account'
-        
-        b = ':'.join([auth['nonce'], auth['nc'], auth['cnonce'],
-                      auth['qop'], md5(A2(request))])
-        return md5(A1(auth, digest) + ':' + b)
-    
-    digest = htdigest()
-    HTTPAuth = HTTPError(401, "Unauthorized.", header={'WWW-Authenticate':
-                    ('Digest realm="%(realm)s", nonce="%(nonce)s", '
-                     'algorithm="MD5", qop=%(auth)s' % digest)})
-    
-    if 'Authorization' in request.header:
-        
-        auth = request.header['Authorization'].replace('Digest ', '').split(',')
-        auth = dict([x.strip().replace('"', '').split('=') for x in auth])
-        
-        if filter(lambda k: not k in auth, ['qop', 'username', 'nonce', 'response', 'uri']):
-            print >> sys.stderr, 'only `qop` authentication is implemented'
-            print >> sys.stderr, 'see', 'http://code.activestate.com/recipes/302378-digest-authentication/'
-            return HTTPError(403, 'Unauthorized')
-        
-        if result(auth, digest) == auth['response']:
-            
-            rnd_time = time.gmtime(time.time() - 1000*random.random())
-            ts = time.strftime('%Y-%m-%dT%H:%M:%SZ', rnd_time)
-            d = { "created_at": ts, "activated_at": ts,
-                  "subscription_expires_at": None,
-                  "updated_at": ts, "subscribed": False,
-                  "domain": host, "id": 12345,
-                  "private_items": True,
-                  "domain_home_page": None,
-                  "email": "info@example.org",
-                  "alpha": False
-                 }
-                 
-            body = json.dumps(d)
-            
-            session_id = sessions.new()
-            if sys.version_info[0] == 2 and sys.version_info[1] < 6:
-                response.set_cookie('_engine_session', session_id, path='/')
-            else:
-                response.set_cookie('_engine_session', session_id, path='/', httponly=True)
-            response.headers['Content-Length'] = len(body)
-            response.headers['Content-Type'] = 'application/json; charset=utf-8'
-            
-            return body
-        
-        else:
-            return HTTPAuth
-    
-    else:
+    HTTPAuth = authenticate('/account')
+    if HTTPAuth != True:
         return HTTPAuth
-
+    
+    rnd_time = time.gmtime(time.time() - 1000*random.random())
+    ts = time.strftime('%Y-%m-%dT%H:%M:%SZ', rnd_time)
+    d = { "created_at": ts, "activated_at": ts,
+          "subscription_expires_at": None,
+          "updated_at": ts, "subscribed": False,
+          "domain": host, "id": 12345,
+          "private_items": True,
+          "domain_home_page": None,
+          "email": "info@example.org",
+          "alpha": False
+         }
+    
+    body = json.dumps(d)
+    
+    
+    response.headers['Content-Length'] = len(body)
+    response.headers['Content-Type'] = 'application/json; charset=utf-8'
+    
+    return body
 
 if __name__ == '__main__':
     
     import bottle; bottle.debug(True)
     
     options = [
-        make_option('--proxy', dest='proxy', default=False, action='store_true',
-                     help="proxy non-matching my.cl.ly-links"),
+        # make_option('--proxy', dest='proxy', default=False, action='store_true',
+        #              help="proxy non-matching my.cl.ly-links"),
         make_option('--bind', dest='bind', default='0.0.0.0', type=str, metavar='IP',
                      help="binding address, e.g. localhost [default: %default]"),
         make_option('--mdb-host', dest='mongodb_host', default='localhost',
@@ -327,7 +327,7 @@ if __name__ == '__main__':
         make_option('--mdb-port', dest='mongodb_port', default=27017,
                     type=int, metavar='PORT', help="mongoDB port [default: %default]"),
         ]
-        
+    
     parser = OptionParser(option_list=options, usage="usage: %prog [options] [Hostname]")
     options, args = parser.parse_args()
     
