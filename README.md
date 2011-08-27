@@ -6,10 +6,16 @@ alternate API implementation; hosted on your own server!
 
 ### Installation
 
-- python2.5 or higher
-- MongoDB (relying on GridFS)
+You'll need [python](http://python.org/) 2.5 or higher and easy_install (or
+pip) (e.g. `apt-get install python-setuputils`). Regenwolken uses
+[GridFS](http://www.mongodb.org/display/DOCS/GridFS) as file storage backend,
+therefore you need [MongoDB](http://mongodb.org/) 1.6 or higher.
 
-- pip install pymongo bottle (python 2.5 needs simplejson as well)
+    pip install pymongo bottle # or
+    easy_install pymongo bottle
+    
+    # python2.5 users will need simplejson as well
+    pip install simplejson
 
 ### Run
 
@@ -29,9 +35,17 @@ alternate API implementation; hosted on your own server!
 - finally launch Cloud.app and log in with `leave@thecloud:now` as user:passwd.
 - take a test screenshot
 
-If your mongodb server is not on localhost:27017 you have to edit the
-script (last lines); same for alternative binding adress (default:
-localhost:80).
+### Implementation
+
+Regenwolken currently provides only a small subset (but enough to get
+Cloud.app working) of [CloudApp's API](http://developer.getcloudapp.com/).
+
+    /account    - basic account info
+    /items      - browse uploads
+    /items/new  - preparing new upload
+    /items/hash - return data
+    /           - POST data
+    
 
 ### (current) Limitations
 
@@ -41,7 +55,7 @@ localhost:80).
 
 ### Todo:
 
-- session management (Cloud.app does not send the cookie :-/)
+- implement file <-> user relations and some configurations like maximum file size limit
 - test SSL encryption (silent client-side redirection)
 - cleanup
 
