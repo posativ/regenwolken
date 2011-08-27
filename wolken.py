@@ -244,6 +244,12 @@ def screenshots():
 @route('/items')
 def items():
     
+    cookie = request.get_cookie('_engine_session')
+    if not cookie:
+        HTTPAuth = authenticate('/items')
+        if HTTPAuth != True:
+            return HTTPAuth
+    
     params = dict([part.split('=') for part in urlparse(request.url).query.split('&')])
     
     List = []
@@ -251,7 +257,7 @@ def items():
         List.append(Item(name="Item Dummy %s" % (x+1)))
     
     response.headers['Content-Type'] = 'application/json; charset=utf-8'
-    response.set_cookie('_engine_session', c)
+    response.set_cookie('_engine_session', cookie)
     
     return json.dumps(List)
 
