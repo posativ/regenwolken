@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-# 
+#
 # Copyright 2011 posativ <info@posativ.org>. All rights reserved.
 # License: BSD Style, 2 clauses.
 #
@@ -11,9 +11,7 @@
 
 import sys; reload(sys)
 sys.setdefaultencoding('utf-8')
-import os
-from os.path import join, isdir, getmtime, basename
-from datetime import timedelta, datetime
+from datetime import timedelta
 
 from bottle import route, run, post, request, response
 from bottle import HTTPResponse, HTTPError
@@ -24,14 +22,59 @@ import time
 import random
 
 import json
-import base64
 
 from pymongo import Connection
 import gridfs
 from bson.objectid import ObjectId
+from uuid import uuid4
 
-FS_LIMIT = 100*2**20 # 100 Megabyte
-HASH = '24efc4e1d8d7c2deedb8dbd6fb701ae1a7876775' # =~ "HalloWelt
+from optparse import OptionParser, make_option
+
+
+class Sessions:
+    '''A simple in-memory session handler.  Uses dict[session_id] = (timestamp, value)
+    sheme, automatic timout after 15 minutes.
+    
+    session_id -- uuid.uuid4().hex
+    timestamp -- time.time()
+    value -- sha1 hash
+    '''
+    
+    def __init__(self):
+        self.db = {}
+        
+    def __repr__(self):
+        L = []
+        for item in sorted(self.db.keys(), key=lambda k: k[0]):
+            L.append('%s\t%s, %s' % (item, self.db[item][0], self.db[item][1]))
+        return '\n'.join(L)
+
+    def __contains__(self, item):
+        self._outdated()
+        return True if self.db.has_key(item) else False
+        
+    def _outdated(self):
+        '''automatic cleanup of outdated sessions, 15 min time-to-live'''
+        self.db = dict([(k, v) for k,v in self.db.items() if (time.time() - v[0]) <= 60*15])
+        
+    def get(self, session_id):
+        '''returns session id'''
+        self._outdated()
+        for item in self.db:
+            if item == session_id:
+                return self.db[session_id][1]
+        else:
+            raise KeyError(session_id)
+            
+    def new(self):
+        '''returns new session id'''
+        
+        self._outdated()
+        session_id = uuid4().hex
+        self.db[session_id] = (time.time(), random.getrandbits(128))
+        
+        return session_id
+        
 
 def ttl2timedelta(s):
     """converts :digit:[m|h|d|w] into their equivalent datetime objects"""
@@ -52,7 +95,7 @@ def ttl2timedelta(s):
         return timedelta(days=i)
     else:
         timedelta(weeks=i)
-        
+
 def hash(f, bs=128, length=12, encode=lambda x: x):
     """returns a truncated md5 hash of given file."""
     
@@ -68,12 +111,12 @@ def hash(f, bs=128, length=12, encode=lambda x: x):
 # def upload():
 #     #response.headers['Content-Type'] = 'application/json'
 #     response.headers['Content-Type'] = 'text/plain'
-#     
-#     # TODO: 
+#
+#     # TODO:
 #     passwd = request.forms.get('passwd', None)
 #     if passwd == None or not hashlib.sha1(passwd).hexdigest() == HASH:
 #         return HTTPError(403, "Access denied.")
-#     
+#
 #     data = request.files.get('data', None)
 #     if data != None:
 #         data.file.seek(0, 2)
@@ -81,28 +124,28 @@ def hash(f, bs=128, length=12, encode=lambda x: x):
 #         if size > FS_LIMIT: # 1 MiB file limit
 #             return 'file too big'
 #         data.file.seek(0)
-# 
+#
 # @route('/:mode#raw|inline#/:hash')
 # def get(mode, hash):
 #     """maps to /raw|inline/md5hash and returns the file either in download
 #     mode or inline."""
-#     
+#
 #     filename = Storage.get(hash)
 #     if filename:
 #         header = dict()
 #         mimetype, encoding = mimetypes.guess_type(filename)
 #         if mimetype: header['Content-Type'] = mimetype
 #         if encoding: header['Content-Encoding'] = encoding
-#         
+#
 #         if mode == 'raw':
 #             name = basename(filename)
 #             header['Content-Disposition'] = 'attachment; filename="%s"' % name
-#             
+#
 #         stats = os.stat(filename)
 #         header['Content-Length'] = stats.st_size
 #         lm = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(stats.st_mtime))
 #         header['Last-Modified'] = lm
-#         
+#
 #         body = '' if request.method == 'HEAD' else open(filename, 'rb')
 #         return HTTPResponse(body, header=header)
 
@@ -121,22 +164,22 @@ def upload():
     id = fs.put(obj.file, filename=obj.filename, upload_date=ts, content_type=mt)
     
     d = { "name": obj.filename,
-          "href": "http://localhost/items/" + str(id),
-          "content_url": "http://localhost/items/"+ str(id),
+          "href": 'http://' + host + "/items/" + str(id),
+          "content_url": 'http://' + host + "/items/"+ str(id),
           "created_at": ts,
           "redirect_url": None,
           "deleted_at": None,
           "private":True,
           "updated_at": ts,
-          "remote_url": "http://f.cl.ly/items/070c0T2I0y3p0p3P053c/Bildschirmfoto%202011-08-26%20um%2022.14.39.png",
+          #"remote_url": "http://f.cl.ly/items/070c0T2I0y3p0p3P053c/Bildschirmfoto%202011-08-26%20um%2022.14.39.png",
           "view_counter": 1,
-          "url": "http://localhost/items/"+ str(id),
+          "url": 'http://' + host + "/items/"+ str(id),
           "id": 8793473, "icon": "http://my.cl.ly/images/new/item-types/image.png",
-          "thumbnail_url": "http://thumbs.cl.ly/2r3h0z2r3z2c1S2z2S3a",
+          "thumbnail_url": 'http://' + host + '/thumb/' + str(id),
           "subscribed": False, "source": "Cloud/1.5.1 CFNetwork/520.0.13 Darwin/11.1.0 (x86_64) (MacBookPro6,2)",
           "item_type": "image"}
     return HTTPResponse(json.dumps(d), header={'Content-Type': 'application/json; charset=utf-8'})
-    
+
 
 @route('/raindrops/com.linebreak.Raindrop.Screenshots')
 def screenshots():
@@ -148,28 +191,38 @@ def screenshots():
                   "description": "Automatically uploads screenshot files."}),
                   header={'Content-Type': 'application/json'})
 
-@route('/items/new')          
+@route('/items/new')
 def new():
-    d = { "uploads_remaining": 5,
-          "url": "http://f.cl.ly",
-          "max_upload_size": 26214400,
-          "params": { "acl":"public-read" },
-        }
-    return HTTPResponse(json.dumps(d),
-                header={'Content-Type': 'application/json; charset=utf-8'})
-                
+    
+    # for key in request.header:
+    #     print key+':', request.header[key]
+    c = request.get_cookie('_engine_session')
+    
+    if c in sessions or True:
+    
+        d = { "uploads_remaining": 5,
+              "url": "http://f.cl.ly",
+              "max_upload_size": 26214400,
+              #"params": { "acl":"public-read", 'signature': sessions.get(c) },
+              "params": { "acl":"public-read" },
+            }
+        return HTTPResponse(json.dumps(d),
+                    header={'Content-Type': 'application/json; charset=utf-8'})
+    else:
+        return HTTPError(403, 'Unauthorized.')
+
 @route('items/:id')
 def get(id):
     
     id = ObjectId(id)
     f = fs.get(id)
     return HTTPResponse(f, header={'Content-Type': f.content_type})
-    
+
 
 @route('/account')
 def auth():
     
-    users = {'leave@thecloud': 'now'} 
+    users = {'leave@thecloud': 'now'}
     
     def md5(data):
         return hashlib.md5(data).hexdigest()
@@ -181,8 +234,8 @@ def auth():
         nonce = md5("%d:%s" % (time.time(), realm))
         qop = 'auth'
         return {'nonce': nonce, 'realm': realm, 'auth': qop}
-        
-    def response(auth, digest):
+    
+    def result(auth, digest):
         """calculates  digest response (MD5 and qop)"""
         
         def A1(auth, digest):
@@ -195,12 +248,12 @@ def auth():
         b = ':'.join([auth['nonce'], auth['nc'], auth['cnonce'],
                       auth['qop'], md5(A2(request))])
         return md5(A1(auth, digest) + ':' + b)
-        
+    
     digest = htdigest()
     HTTPAuth = HTTPError(401, "Unauthorized.", header={'WWW-Authenticate':
                     ('Digest realm="%(realm)s", nonce="%(nonce)s", '
                      'algorithm="MD5", qop=%(auth)s' % digest)})
-        
+    
     if 'Authorization' in request.header:
         
         auth = request.header['Authorization'].replace('Digest ', '').split(',')
@@ -210,39 +263,52 @@ def auth():
             print >> sys.stderr, 'only `qop` authentication is implemented'
             print >> sys.stderr, 'see', 'http://code.activestate.com/recipes/302378-digest-authentication/'
             return HTTPError(403, 'Unauthorized')
-            
-        if response(auth, digest) == auth['response']:
+        
+        if result(auth, digest) == auth['response']:
             
             rnd_time = time.gmtime(time.time() - 1000*random.random())
             ts = time.strftime('%Y-%m-%dT%H:%M:%SZ', rnd_time)
             d = { "created_at": ts, "activated_at": ts,
                   "subscription_expires_at": None,
                   "updated_at": ts, "subscribed": False,
-                  "domain": 'localhost', "id": 12345,
+                  "domain": host, "id": 12345,
                   "private_items": True,
                   "domain_home_page": None,
                   "email": "info@example.org",
                   "alpha": False
                  }
-          
+                 
             body = json.dumps(d)
-            header = {}
-            header['Content-Length'] = len(body)
-            header['Content-Type'] = 'application/json; charset=utf-8'
-            return HTTPResponse(body, header=header)
             
+            session_id = sessions.new()
+            response.set_cookie('_engine_session', session_id, path='/', httponly=True)
+            response.headers['Content-Length'] = len(body)
+            response.headers['Content-Type'] = 'application/json; charset=utf-8'
+            
+            return body
+        
         else:
             return HTTPAuth
-        
-    else:       
+    
+    else:
         return HTTPAuth
-        
+
 
 if __name__ == '__main__':
     
-    #import bottle; bottle.debug(True)
+    options = [
+        ]
+        
+    parser = OptionParser(option_list=options, usage="usage: %prog [options] FILE")
+    options, args = parser.parse_args()
+    
+    if len(args) == 1:
+        host = args[0]
+    else:
+        host = 'localhost'
     
     db = Connection('localhost', 27017)['cloud']
     fs = gridfs.GridFS(db)
+    sessions = Sessions()
     
     run(host='localhost', port=80)
