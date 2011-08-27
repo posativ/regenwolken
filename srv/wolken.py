@@ -165,11 +165,69 @@ def get(id):
     return HTTPResponse(f, header={'Content-Type': f.content_type})
     
 
-@route('/:identifier')
-def index(identifier):
+@route('/account')
+def auth():
     
-    if identifier == 'account':
+    users = {'blubber@kekse': 'qq'} 
+    
+    def md5(data):
+        return hashlib.md5(data).hexdigest()
+    
+    def htdigest():
         
+        realm = 'Application'
+        nonce = md5("%d:%s" % (time.time(), realm))
+        qop = 'auth'
+        return {'nonce': nonce, 'realm': realm, 'auth': qop}
+        
+    def response(auth, digest):
+        """calculates  digest response (MD5 and qop)"""
+        
+        def A1(auth, digest):
+            passwd = users.get(auth['username'], '')
+            return md5(auth['username'] + ':' + digest['realm'] + ':' + passwd)
+        
+        def A2(request):
+            return request.method + ':' + '/account'
+        
+        b = ':'.join([auth['nonce'], auth['nc'], auth['cnonce'],
+                      auth['qop'], md5(A2(request))])
+        return md5(A1(auth, digest) + ':' + b)
+        
+    for key in request.header.keys():
+        print key + ':', request.header[key]
+        
+    digest = htdigest()
+        
+    if 'Authorization' in request.header:
+        
+        auth = request.header['Authorization'].replace('Digest ', '').split(',')
+        auth = dict([x.strip().replace('"', '').split('=') for x in auth])
+        
+        if 'qop' in auth:
+            if response(auth, digest) == auth['response']:
+                return HTTPResponse('Yoooo')
+            
+        else:
+            print >> sys.stderr, 'only `qop` authentication is implemented'
+            print >> sys.stderr, 'see', 'http://code.activestate.com/recipes/302378-digest-authentication/'
+        
+        header = {}
+        # header['Content-Length'] = len(body)
+        # header['Content-Type'] = 'application/json; charset=utf-8'
+        #     
+        # header['WWW-Authenticate'] = ('Digest realm="%(realm)s", nonce="%(nonce)s", '
+        #                               'algorithm="MD5", qop=%(auth)s' % digest)
+        # 
+        return HTTPError(401, "Unauthorized.", header=header)
+    
+    else:
+        
+        header = {'WWW-Authenticate': ('Digest realm="%(realm)s", nonce="%(nonce)s", '
+                                      'algorithm="MD5", qop=%(auth)s' % digest)}
+                                      
+        return HTTPError(401, "Unauthorized", header=header)
+    
         d = { "created_at":"2011-07-26T14:26:51Z",
               "activated_at":"2011-07-26T14:32:48Z",
               "subscription_expires_at": None,
@@ -183,11 +241,8 @@ def index(identifier):
               
         body = json.dumps(d)
         
-        header = {}
-        header['Content-Length'] = len(body)
-        header['Content-Type'] = 'application/json; charset=utf-8'
         
-        return HTTPResponse(body, header=header)
+        
 
 if __name__ == '__main__':
     
