@@ -63,63 +63,6 @@ def hash(f, bs=128, length=12, encode=lambda x: x):
         md5.update(data)
     return encode(md5.hexdigest()).strip('=').lower()[:length]
 
-def walk(path):
-    """recursive filelisting"""
-    filelist = []
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            filelist.append(join(root, file))
-    return filelist
-
-class FileStorage:
-    """Wrapper class for all file access related things."""
-    
-    def __init__(self, datadir, ttl='3d'):
-        """datadir is required, time-to-live defaults to 3 days and can be
-        overwritten by single POSTs"""
-        
-        if not isdir(datadir):
-            try:
-                os.makedirs(datadir)
-            except OSError:
-                print >> sys.stderr, 'unable to create \'' + datadir + '\''
-                sys.exit(1)
-        
-        self.datadir = datadir
-        self.ttl = ttl2timedelta(ttl)
-        
-        self.db = {}
-        
-        self.cleanup()
-        self.resume()
-        
-    def add(self, name, data):
-        pass
-        
-    def get(self, hash):
-        
-        if hash in self.db:
-            return self.db[hash]
-        
-    def resume(self):
-        
-        for path in walk(self.datadir):
-            f = open(path, 'r')
-            md5 = hash(f)
-            self.db[md5] = path
-            f.close()
-    
-    def cleanup(self):
-        
-        now = datetime.now()
-        for path in walk(self.datadir):
-            ts = datetime.fromtimestamp(getmtime(path))
-            if ts + self.ttl < now:
-                print '\'', path, '\'', 'is more than', self.ttl, 'old'
-
-# Storage = FileStorage('data')
-# print Storage.db.keys()
-# 
 # @post('/file/')
 # def upload():
 #     #response.headers['Content-Type'] = 'application/json'
@@ -170,21 +113,11 @@ def upload():
     
     for key in ['acl', 'signature', 'key', 'AWSAccessKeyId', 'success_action_redirect', 'policy']:
         print request.forms.get(key)
-        
-    ts = time.strftime('%Y-%m-%dT%H:%M:%SZ'),
     
+    ts = time.strftime('%Y-%m-%dT%H:%M:%SZ')
     obj = request.files.get('file')
-    id = fs.put(obj.file, filename=obj.filename, upload_date=ts, content_type='image/png')
-    print id
-    
-    
-    # f = open('test.png', 'w')
-    # while True:
-    #     data = obj.file.read(1024)
-    #     f.write(data)
-    #     if not data:
-    #         break
-    # f.close()
+    mt, enc = mimetypes.guess_type(obj.filename.strip('\x00'))
+    id = fs.put(obj.file, filename=obj.filename, upload_date=ts, content_type=mt)
     
     d = { "name": obj.filename,
           "href": "http://localhost/items/" + str(id),
@@ -195,7 +128,7 @@ def upload():
           "private":True,
           "updated_at": ts,
           "remote_url": "http://f.cl.ly/items/070c0T2I0y3p0p3P053c/Bildschirmfoto%202011-08-26%20um%2022.14.39.png",
-          "view_counter": 0,
+          "view_counter": 1,
           "url": "http://localhost/items/"+ str(id),
           "id": 8793473, "icon": "http://my.cl.ly/images/new/item-types/image.png",
           "thumbnail_url": "http://thumbs.cl.ly/2r3h0z2r3z2c1S2z2S3a",
@@ -208,10 +141,10 @@ def upload():
 def screenshots():
     return HTTPResponse(json.dump(
                 { "bundle_id": "com.linebreak.Raindrop.Screenshots",
-                  "version":"1.0", "creator":"Line,  break S.L.",
+                  "version": "1.0", "creator": "Line,  break S.L.",
                   "url": "http://getcloudapp.com/",
-                  "name":"Screenshots",
-                  "description":"Automatically uploads screenshot files."}),
+                  "name": "Screenshots",
+                  "description": "Automatically uploads screenshot files."}),
                   header={'Content-Type': 'application/json'})
 
 @route('/items/new')          
@@ -219,14 +152,7 @@ def new():
     d = { "uploads_remaining": 5,
           "url": "http://f.cl.ly",
           "max_upload_size": 26214400,
-          "params":
-            { "policy": base64.standard_b64encode('{"expiration":"2011-08-26T20:29:44Z","conditions":[{"bucket":"f.cl.ly"},{"acl":"public-read"},{"success_action_redirect":"http://my.cl.ly/items/s3"},["content-length-range",0,26214400],["starts-with","$key","items/070c0T2I0y3p0p3P053c/"]]}'),
-              "AWSAccessKeyId": "AKIAIDPUZISHSBEOFS6Q",
-              "signature": "d4OuGSlvNoy+8HaC939eMyirP5k=",
-              "success_action_redirect": "http://my.cl.ly/items/s3",
-              "key":"items/070c0T2I0y3p0p3P053c/${filename}",
-              "acl":"public-read"
-            },
+          "params": { "acl":"public-read" },
         }
     return HTTPResponse(json.dumps(d),
                 header={'Content-Type': 'application/json; charset=utf-8'})
@@ -235,7 +161,8 @@ def new():
 def get(id):
     
     id = ObjectId(id)
-    return HTTPResponse(fs.get(id).read(), header={'Content-Type': 'image/png'})
+    f = fs.get(id)
+    return HTTPResponse(f, header={'Content-Type': f.content_type})
     
 
 @route('/:identifier')
@@ -247,17 +174,10 @@ def index(identifier):
               "activated_at":"2011-07-26T14:32:48Z",
               "subscription_expires_at": None,
               "updated_at":"2011-07-26T14:32:48Z",
-              "domain": None, "id":12345,
-              "subscribed": False,
+              "domain": 'localhost', "id": 12345,
+              "subscribed": True,
               "private_items": True,
               "domain_home_page": None,
-              "socket": {
-                    "api_key": "4f6dbc3b89fa4ee9a8ff",
-                    "app_id":"4721",
-                    "auth_url":
-                    "http://my.cl.ly/pusher/auth",
-                    "channels":{"items":"private-items_565387"}
-                },
               "email": "info@example.org",
               "alpha": False }
               
