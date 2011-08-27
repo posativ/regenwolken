@@ -16,7 +16,9 @@ alternate API implementation; hosted on your own server!
 - start MongoDB via `mongod --dbpath path/to/some/folder`
 - run `sudo python wolken.py [host]`
 - edit /etc/hosts to
-    
+
+/etc/hosts
+
     127.0.0.1 ws.pusherapp.com
     127.0.0.1 pusherapp.com
 
