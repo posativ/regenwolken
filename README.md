@@ -6,10 +6,10 @@ alternate API implementation; hosted on your own server!
 
 ### Installation
 
-- python2.6 or higher
+- python2.5 or higher
 - MongoDB (relying on GridFS)
 
-- pip install pymongo bottle
+- pip install pymongo bottle (python 2.5 needs simplejson as well)
 
 ### Run
 
@@ -19,14 +19,19 @@ alternate API implementation; hosted on your own server!
 
 /etc/hosts
 
-    127.0.0.1 ws.pusherapp.com
-    127.0.0.1 pusherapp.com
-
-    127.0.0.1 f.cl.ly
     127.0.0.1 my.cl.ly
+    
+    # below not required, but recommended (privacy)
+    # 127.0.0.1 ws.pusherapp.com
+    # 127.0.0.1 pusherapp.com
+    # 127.0.0.1 f.cl.ly
     
 - finally launch Cloud.app and log in with `leave@thecloud:now` as user:passwd.
 - take a test screenshot
+
+If your mongodb server is not on localhost:27017 you have to edit the
+script (last lines); same for alternative binding adress (default:
+localhost:80).
 
 ### (current) Limitations
 

@@ -21,7 +21,10 @@ import mimetypes
 import time
 import random
 
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 from pymongo import Connection
 import gridfs
@@ -151,12 +154,13 @@ def hash(f, bs=128, length=12, encode=lambda x: x):
 
 @post('/')
 def upload():
+
+    # python2.5 fails with these four lines
+    # for key in request.header.keys():
+    #     print key + ':', request.header[key]
     
-    for key in request.header.keys():
-        print key + ':', request.header[key]
-    
-    for key in ['acl', 'signature', 'key', 'AWSAccessKeyId', 'success_action_redirect', 'policy']:
-        print key, request.forms.get(key)
+    # for key in ['acl', 'signature', 'key', 'AWSAccessKeyId', 'success_action_redirect', 'policy']:
+    #     print key, request.forms.get(key)
     
     ts = time.strftime('%Y-%m-%dT%H:%M:%SZ')
     obj = request.files.get('file')
@@ -281,7 +285,10 @@ def auth():
             body = json.dumps(d)
             
             session_id = sessions.new()
-            response.set_cookie('_engine_session', session_id, path='/', httponly=True)
+            if sys.version_info[0] == 2 and sys.version_info[1] < 6:
+                response.set_cookie('_engine_session', session_id, path='/')
+            else:
+                response.set_cookie('_engine_session', session_id, path='/', httponly=True)
             response.headers['Content-Length'] = len(body)
             response.headers['Content-Type'] = 'application/json; charset=utf-8'
             
