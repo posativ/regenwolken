@@ -9,9 +9,10 @@
 #
 # `srv/wolken.py` is a simple webserver, allows you to POST and GET files.
 
+__version__ = "0.1.1-alpha"
+
 import sys; reload(sys)
 sys.setdefaultencoding('utf-8')
-from datetime import timedelta
 
 from bottle import route, run, post, request, response
 from bottle import HTTPResponse, HTTPError
@@ -20,6 +21,7 @@ import hashlib
 import mimetypes
 import time
 import random
+from urlparse import urlparse
 
 try:
     import json
@@ -33,6 +35,35 @@ from uuid import uuid4
 
 from optparse import OptionParser, make_option
 
+class Item(dict):
+    """a basic item placeholder"""
+    
+    def __init__(self, **kw):
+        
+        h = random.getrandbits(128)
+        __dict__ = {
+            "href": "http://my.cl.ly/items/%x" % h,
+            "name": "Item Dummy",
+            "private": True,
+            "subscribed": False,
+            "url": "http://my.cl.ly/items/%x" % h,
+            "content_url": "http://my.cl.ly/items/%x" % h,
+            "item_type": "bookmark",
+            "view_counter": 0,
+            "icon": "http://my.cl.ly/images/item_types/bookmark.png",
+            "remote_url": "http://my.cl.ly/items/%x" % h,
+            "redirect_url": "http://my.cl.ly",
+            "source": "Regenwolke/%s LeaveTheCloud/Now Darwin/11.0.0 (x86_64) (MacBookPro5,5)" % __version__,
+            "created_at": time.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            "updated_at": time.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            "deleted_at": None
+        }
+        for k,v in __dict__.iteritems():
+            self[k] = v
+        self.update(**kw)
+        
+    def to_dict(self):
+        return self.dict
 
 class Sessions:
     '''A simple in-memory session handler.  Uses dict[session_id] = (timestamp, value)
@@ -77,27 +108,6 @@ class Sessions:
         self.db[session_id] = (time.time(), random.getrandbits(128))
         
         return session_id
-        
-
-def ttl2timedelta(s):
-    """converts :digit:[m|h|d|w] into their equivalent datetime objects"""
-    
-    if not filter(lambda c: c in s, 'mhdw'):
-        print >> sys.stderr, 'only m, h, d and w is supported in ttl'
-        sys.exit(1)
-    
-    try:
-        i, s = int(s[:-1]), s[-1]
-    except ValueError:
-        print >> sys.stderr, 'unable to convert timedelta'
-    if s == 'm':
-        return timedelta(minutes=i)
-    elif s == 'h':
-        return timedelta(hours=i)
-    elif s == 'd':
-        return timedelta(days=i)
-    else:
-        timedelta(weeks=i)
 
 def hash(f, bs=128, length=12, encode=lambda x: x):
     """returns a truncated md5 hash of given file."""
@@ -110,24 +120,7 @@ def hash(f, bs=128, length=12, encode=lambda x: x):
         md5.update(data)
     return encode(md5.hexdigest()).strip('=').lower()[:length]
 
-# @post('/file/')
-# def upload():
-#     #response.headers['Content-Type'] = 'application/json'
-#     response.headers['Content-Type'] = 'text/plain'
-#
-#     # TODO:
-#     passwd = request.forms.get('passwd', None)
-#     if passwd == None or not hashlib.sha1(passwd).hexdigest() == HASH:
-#         return HTTPError(403, "Access denied.")
-#
-#     data = request.files.get('data', None)
-#     if data != None:
-#         data.file.seek(0, 2)
-#         size = data.file.tell()
-#         if size > FS_LIMIT: # 1 MiB file limit
-#             return 'file too big'
-#         data.file.seek(0)
-#
+
 # @route('/:mode#raw|inline#/:hash')
 # def get(mode, hash):
 #     """maps to /raw|inline/md5hash and returns the file either in download
@@ -156,8 +149,11 @@ def hash(f, bs=128, length=12, encode=lambda x: x):
 def upload():
 
     # python2.5 fails with these four lines
-    # for key in request.header.keys():
-    #     print key + ':', request.header[key]
+    for key in request.header.keys():
+        print key + ':', request.header[key]
+        
+    print request.forms.keys()
+    print repr(request.files['file'])
     
     # for key in ['acl', 'signature', 'key', 'AWSAccessKeyId', 'success_action_redirect', 'policy']:
     #     print key, request.forms.get(key)
@@ -167,14 +163,16 @@ def upload():
     mt, enc = mimetypes.guess_type(obj.filename.strip('\x00'))
     id = fs.put(obj.file, filename=obj.filename, upload_date=ts, content_type=mt)
     
-    d = { "name": obj.filename,
+    obj = fs.get(id)
+    
+    d = { "name": obj.name,
           "href": 'http://' + host + "/items/" + str(id),
           "content_url": 'http://' + host + "/items/"+ str(id),
-          "created_at": ts,
+          "created_at": obj.upload_date.strftime('%Y-%m-%dT%H:%M:%SZ'),
           "redirect_url": None,
           "deleted_at": None,
-          "private":True,
-          "updated_at": ts,
+          "private": False,
+          "updated_at": obj.upload_date.strftime('%Y-%m-%dT%H:%M:%SZ'),
           #"remote_url": "http://f.cl.ly/items/070c0T2I0y3p0p3P053c/Bildschirmfoto%202011-08-26%20um%2022.14.39.png",
           "view_counter": 1,
           "url": 'http://' + host + "/items/"+ str(id),
@@ -195,6 +193,20 @@ def screenshots():
                   "description": "Automatically uploads screenshot files."}),
                   header={'Content-Type': 'application/json'})
 
+@route('/items')
+def items():
+    
+    params = dict([part.split('=') for part in urlparse(request.url).query.split('&')])
+    
+    List = []
+    for x in range(int(params['per_page'])):
+        List.append(Item(name="Item Dummy %s" % (x+1)))
+        
+    response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        
+    return json.dumps(List)
+    
+
 @route('/items/new')
 def new():
     
@@ -204,11 +216,11 @@ def new():
     
     if c in sessions or True:
     
-        d = { "uploads_remaining": 5,
-              "url": "http://f.cl.ly",
-              "max_upload_size": 26214400,
+        d = { "url": "http://my.cl.ly",
               #"params": { "acl":"public-read", 'signature': sessions.get(c) },
-              "params": { "acl":"public-read" },
+              "params": { "acl":"public-read",
+                          "signature": "session..."
+                        },
             }
         return HTTPResponse(json.dumps(d),
                     header={'Content-Type': 'application/json; charset=utf-8'})
@@ -303,10 +315,20 @@ def auth():
 
 if __name__ == '__main__':
     
+    import bottle; bottle.debug(True)
+    
     options = [
+        make_option('--proxy', dest='proxy', default=False, action='store_true',
+                     help="proxy non-matching my.cl.ly-links"),
+        make_option('--bind', dest='bind', default='0.0.0.0', type=str, metavar='IP',
+                     help="binding address, e.g. localhost [default: %default]"),
+        make_option('--mdb-host', dest='mongodb_host', default='localhost',
+                    type=str, metavar='HOST', help="mongoDB host [default: %default]"),
+        make_option('--mdb-port', dest='mongodb_port', default=27017,
+                    type=int, metavar='PORT', help="mongoDB port [default: %default]"),
         ]
         
-    parser = OptionParser(option_list=options, usage="usage: %prog [options] FILE")
+    parser = OptionParser(option_list=options, usage="usage: %prog [options] [Hostname]")
     options, args = parser.parse_args()
     
     if len(args) == 1:
@@ -314,8 +336,8 @@ if __name__ == '__main__':
     else:
         host = 'localhost'
     
-    db = Connection('localhost', 27017)['cloud']
+    db = Connection(options.mongodb_host, options.mongodb_port)['cloudapp']
     fs = gridfs.GridFS(db)
     sessions = Sessions()
     
-    run(host='localhost', port=80)
+    run(host=options.bind, port=80, reloader=True)
