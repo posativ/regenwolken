@@ -211,7 +211,7 @@ def new():
     else:
         return HTTPError(403, 'Unauthorized.')
 
-@route('items/:id')
+@route('/items/:id')
 def get(id):
     
     id = ObjectId(id)
