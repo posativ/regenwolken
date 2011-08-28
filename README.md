@@ -41,6 +41,7 @@ First start MongoDB via `mongod --dbpath path/to/some/folder` and edit your
 with the desired IP):
 
     127.0.0.1 my.cl.ly
+    127.0.0.1 ws.pusherapp.com # <-- stratus app will drive insane without
 
 
 #### as HTTP server
@@ -95,21 +96,8 @@ Cloud.app working) of [CloudApp's API](http://developer.getcloudapp.com/).
     /items      - browse uploads
     /items/new  - preparing new upload
     /items/hash - return data
-    /           - POST data
-    
+    /           - POST data    
 
-### (current) Limitations
-
-- Finder -> send via CloudApp fails utterly
-- CloudApp is not SSL at all
-- only public uploads
-- no web-API at all
-
-### Todo:
-
-- implement file <-> user relations and some configurations like maximum file size limit
-- test SSL encryption (silent client-side redirection)
-- cleanup
 
 ### Links:
 

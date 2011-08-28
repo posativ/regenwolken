@@ -182,7 +182,7 @@ def authenticate(uri):
     if 'Authorization' in request.header:
         
         auth = request.header['Authorization'].replace('Digest ', '').split(',')
-        auth = dict([x.strip().replace('"', '').split('=') for x in auth])
+        auth = dict([x.strip().replace('"', '').split('=', 1) for x in auth])
         
         if filter(lambda k: not k in auth, ['qop', 'username', 'nonce', 'response', 'uri']):
             print >> sys.stderr, 'only `qop` authentication is implemented'
@@ -191,10 +191,10 @@ def authenticate(uri):
         
         if result(auth, digest, uri) == auth['response']:
             session_id = sessions.new()
-            if sys.version_info[0] == 2 and sys.version_info[1] < 6:
-                response.set_cookie('_engine_session', session_id, path='/')
-            else:
-                response.set_cookie('_engine_session', session_id, path='/', httponly=True)
+            # if sys.version_info[0] == 2 and sys.version_info[1] < 6:
+            #                 response.set_cookie('_engine_session', session_id, path='/')
+            #             else:
+            #                 response.set_cookie('_engine_session', session_id, path='/', httponly=True)
             return True
     
     return HTTPAuth
@@ -244,11 +244,9 @@ def screenshots():
 @route('/items')
 def items():
     
-    cookie = request.get_cookie('_engine_session')
-    if not cookie:
-        HTTPAuth = authenticate('/items')
-        if HTTPAuth != True:
-            return HTTPAuth
+    HTTPAuth = authenticate('/' + request.url.split('/', 3)[-1])
+    if HTTPAuth != True:
+        return HTTPAuth
     
     params = dict([part.split('=') for part in urlparse(request.url).query.split('&')])
     
@@ -257,16 +255,12 @@ def items():
         List.append(Item(name="Item Dummy %s" % (x+1)))
     
     response.headers['Content-Type'] = 'application/json; charset=utf-8'
-    response.set_cookie('_engine_session', cookie)
     
     return json.dumps(List)
 
 
 @route('/items/new')
 def new():
-    
-    # c = request.get_cookie('_engine_session')
-    # if not c in sessions:
     
     HTTPAuth = authenticate('/items/new')
     if HTTPAuth != True:
