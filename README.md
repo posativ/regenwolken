@@ -16,6 +16,10 @@ therefore you need [MongoDB](http://mongodb.org/) 1.6 or higher.
     
     # python2.5 users will need simplejson as well
     pip install simplejson
+    
+To work as an alternative CloudApp-server, you have to edit their DNS *my.cl.ly*
+to your own IP in /etc/hosts. This will not interfere with CloudApp itself,
+because they're using *cl.ly* for sharing.
 
 ### Run
 
@@ -34,6 +38,10 @@ therefore you need [MongoDB](http://mongodb.org/) 1.6 or higher.
     
 - finally launch Cloud.app and log in with `leave@thecloud:now` as user:passwd.
 - take a test screenshot
+
+Note: you should invoke the script with a hostname (=domain name), where you
+are hosting Regenwolken. This will return into customized URLs, pointing
+directly to the ressource.
 
 ### Implementation
 
