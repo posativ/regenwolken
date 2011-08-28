@@ -328,6 +328,8 @@ if __name__ == '__main__':
         #              help="proxy non-matching my.cl.ly-links"),
         make_option('--bind', dest='bind', default='0.0.0.0', type=str, metavar='IP',
                      help="binding address, e.g. localhost [default: %default]"),
+        make_option('--port', dest='port', default=9000, type=int, metavar='PORT',
+                     help="port, e.g. 80 [default: %default]"),
         make_option('--mdb-host', dest='mongodb_host', default='localhost',
                     type=str, metavar='HOST', help="mongoDB host [default: %default]"),
         make_option('--mdb-port', dest='mongodb_port', default=27017,
@@ -346,4 +348,5 @@ if __name__ == '__main__':
     fs = gridfs.GridFS(db)
     sessions = Sessions()
     
-    run(host=options.bind, port=80, reloader=True)
+    run(host=options.bind, port=options.port, reloader=True)
+    
