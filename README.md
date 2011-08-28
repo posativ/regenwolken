@@ -115,3 +115,4 @@ Cloud.app working) of [CloudApp's API](http://developer.getcloudapp.com/).
 
 - [rixth/raincloud](https://github.com/rixth/raincloud) – a (full?) cloud
   implementation written in node.js
+- [short description in my blog](https://blog.posativ.org/2011/regenwolken-hosting-cloudapp-on-your-own-server/)
