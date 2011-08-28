@@ -52,6 +52,7 @@ with the desired IP):
 - start MongoDB via `mongod --dbpath path/to/some/folder`
 - run `sudo python wolken.py [host]`
 - edit /etc/hosts to
+- finally launch Cloud.app and log in with `leave@thecloud:now` as user:passwd
 - take a test screenshot
 
 Warning: I'm happy, Cloud.app works, but I do not claim wolken.py is non-exploitable!
@@ -74,6 +75,7 @@ your /etc/lighttpd/lighttpd.conf to something like this:
 
 - start MongoDB via `mongod --dbpath path/to/some/folder`
 - run `python wolken.py my.cloud.org` as non-privileged user
+- finally launch Cloud.app and log in with `leave@thecloud:now` as user:passwd
 - take a test screenshot
 
 You might wonder, why we ask for "my.cloud.org|my.cl.ly". Your /eth/hosts
