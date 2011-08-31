@@ -11,8 +11,8 @@ pip) (e.g. `apt-get install python-setuputils`). Regenwolken uses
 [GridFS](http://www.mongodb.org/display/DOCS/GridFS) as file storage backend,
 therefore you need [MongoDB](http://mongodb.org/) 1.6 or higher.
 
-    pip install pymongo bottle # or
-    easy_install pymongo bottle
+    pip install pymongo werkzeug # or
+    easy_install pymongo werkzeug
     
     # python2.5 users will need simplejson as well
     pip install simplejson
@@ -21,8 +21,8 @@ To work as an alternative CloudApp-server, you have to edit their DNS *my.cl.ly*
 to your own IP in /etc/hosts. This will not interfere with CloudApp itself,
 because they're using *cl.ly* for sharing.
 
-    python wolken.py --help
-    Usage: wolken.py [options] [Hostname]
+    python regenwolken.py --help
+    Usage: regenwolken.py [options] [Hostname]
 
     Options:
       --bind=IP        binding address, e.g. localhost [default: 0.0.0.0]
@@ -48,15 +48,15 @@ with the desired IP):
 
 - check, there is no other process on port 80
 - run `python wolken.py my.cloud.org` as root
-- finally launch Cloud.app and log in with `leave@thecloud:now` as user:passwd.
+- finally launch Cloud.app, register and then log in
 
 - start MongoDB via `mongod --dbpath path/to/some/folder`
 - run `sudo python wolken.py [host]`
 - edit /etc/hosts to
-- finally launch Cloud.app and log in with `leave@thecloud:now` as user:passwd
+- finally launch Cloud.app, register and then log in
 - take a test screenshot
 
-Warning: I'm happy, Cloud.app works, but I do not claim wolken.py is non-exploitable!
+Warning: I'm happy, Cloud.app works therefore, I don't take much effort to secure regenwolken.py
 
 #### using lighttpd and mod_proxy
 
@@ -76,7 +76,7 @@ your /etc/lighttpd/lighttpd.conf to something like this:
 
 - start MongoDB via `mongod --dbpath path/to/some/folder`
 - run `python wolken.py my.cloud.org` as non-privileged user
-- finally launch Cloud.app and log in with `leave@thecloud:now` as user:passwd
+- finally launch Cloud.app, register and log in
 - take a test screenshot
 
 You might wonder, why we ask for "my.cloud.org|my.cl.ly". Your /eth/hosts
@@ -92,11 +92,12 @@ directly to the ressource.
 Regenwolken currently provides only a small subset (but enough to get
 Cloud.app working) of [CloudApp's API](http://developer.getcloudapp.com/).
 
+    /           - POST data
     /account    - basic account info
     /items      - browse uploads
     /items/new  - preparing new upload
     /items/hash - return data
-    /           - POST data    
+    /register   - register new account (currently instantly activated)
 
 
 ### Links:
