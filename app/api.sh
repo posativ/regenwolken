@@ -7,7 +7,7 @@ upload() {
 }
 
 list_items() {
-    curl -v --digest -u leave@thecloud:now \
+    curl -v --digest -u test:qq \
         "http://my.cl.ly:5000/items?page=1&per_page=5&type=image&deleted=true"
 }
 
@@ -16,6 +16,21 @@ auth() {
          "http://my.cl.ly:5000/$1"
 }
 
-upload
-#list_items
+register() {
+    curl -v -H "Accept: application/json" \
+     -H "Content-Type: application/json" \
+     -d \
+        '{
+          "user": {
+            "email":      "arthur@dent.com",
+            "password":   "towel",
+            "accept_tos": true
+          }
+        }' \
+     http://my.cl.ly/register
+}
+
+#upload
+list_items
 #auth items/new
+#register
