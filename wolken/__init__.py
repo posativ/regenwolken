@@ -8,6 +8,12 @@ import time
 from uuid import uuid4
 import random
 
+HOSTNAME = 'localhost'
+BIND_ADDRESS = '0.0.0.'
+PORT = 9000
+MONGODB_HOST = '127.0.0.1'
+MONGODB_PORT = 27017
+
 class Sessions:
     '''A simple in-memory session handler.  Uses dict[session_id] = (timestamp, value)
     sheme, automatic timout after 15 minutes.
@@ -17,8 +23,9 @@ class Sessions:
     value -- sha1 hash
     '''
     
-    def __init__(self):
+    def __init__(self, timeout):
         self.db = {}
+        self.timeout = timeout
     
     def __repr__(self):
         L = []
@@ -33,7 +40,8 @@ class Sessions:
     def _outdated(self):
         '''automatic cleanup of outdated sessions, 60sec time-to-live'''
         #FIXME: interferes with authentication
-        self.db = dict([(k, v) for k,v in self.db.items() if (time.time() - v[0]) <= 60])
+        self.db = dict([(k, v) for k,v in self.db.items()
+                            if (time.time() - v[0]) <= self.timeout])
     
     def get(self, session_id):
         '''returns session id'''
@@ -44,11 +52,12 @@ class Sessions:
         else:
             raise KeyError(session_id)
     
-    def new(self):
+    def new(self, account):
         '''returns new session id'''
         
         self._outdated()
         session_id = uuid4().hex
-        self.db[session_id] = (time.time(), random.getrandbits(128))
+        self.db[session_id] = (time.time(), {'key': random.getrandbits(128),
+                'account': account})
         
         return session_id

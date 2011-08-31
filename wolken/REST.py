@@ -20,14 +20,15 @@ except ImportError:
 
 from werkzeug.wrappers import Request, Response
 from wolken import Sessions
+from wolken import MONGODB_HOST, MONGODB_PORT
 
 from pymongo import Connection
 import gridfs
 from bson.objectid import ObjectId
 
-sessions = Sessions()
+sessions = Sessions(timeout=3600)
 
-db = Connection('localhost', 27017)['cloudapp']
+db = Connection(MONGODB_HOST, MONGODB_PORT)['cloudapp']
 fs = gridfs.GridFS(db)
 
 class Item(dict):
@@ -87,12 +88,14 @@ def login(f):
 
 
 def index(environ, request):
+    """NotImplemented -- only used in text/html"""
     response = Response('It works!', 200)
     return response
 
 
 @login
 def account(environ, request):
+    """returns account details"""
     
     rnd_time = time.gmtime(time.time() - 1000*random())
     ts = time.strftime('%Y-%m-%dT%H:%M:%SZ', rnd_time)
@@ -111,6 +114,7 @@ def account(environ, request):
     
 @login
 def items(environ, request):
+    '''list items from user'''
     
     ParseResult = urlparse(request.url)
     if ParseResult.query == '':
@@ -119,15 +123,16 @@ def items(environ, request):
     params = dict([part.split('=', 1) for part in ParseResult.query.split('&')])
     List = []
     for x in range(int(params['per_page'])):
-        List.append(Item("Item Dummy %s" % (x+1), getrandbits(12)))
+        List.append(Item('name', getrandbits(12)))
     
     return Response(json.dumps(List), 200, content_type='application/json; charset=utf-8')
 
     
 @login
 def items_new(environ, request):
+    '''generates a new key for upload process'''
     
-    id = sessions.new()
+    id = sessions.new(request.authorization.username)
     
     d = { "url": "http://my.cl.ly",
           "params": { "acl":"public-read",
@@ -139,16 +144,19 @@ def items_new(environ, request):
 
 
 def upload_file(environ, request):
+    '''upload file, when authorized with `key`'''
     
     if not request.form.get('key') in sessions:
         return Response('Unauthorized.', 403)
     
+    account = sessions.get(request.form.get('key'))['account']
     ts = time.strftime('%Y-%m-%dT%H:%M:%SZ')
     obj = request.files.get('file')
     if not obj:
         return Response('Bad Request.', 400)
     
-    id = fs.put(obj, filename=obj.filename, upload_date=ts, content_type=obj.mimetype)
+    id = fs.put(obj, filename=obj.filename, upload_date=ts, content_type=obj.mimetype,
+                account=account)
     obj = fs.get(id)
     
     d = { "name": obj.name,
@@ -180,4 +188,6 @@ def show(environ, request, id):
         return Response(f, content_type=f.content_type, headers={'Content-Disposition':
                     'attachment; filename="%s"' % basename(f.filename)})
     return Response(f, content_type=f.content_type)
-    
+
+def bookmarks(environ, request):
+    pass    

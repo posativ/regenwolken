@@ -20,7 +20,7 @@ from werkzeug.wsgi import responder
 from werkzeug.datastructures import WWWAuthenticate
 
 from wolken import REST
-from wolken import Sessions
+from wolken import HOSTNAME, BIND_ADDRESS, PORT, MONGODB_HOST, MONGODB_PORT
 
 class LimitedRequest(Request):
     # FIXME: Cloud.app can not handle 413 Request Entity Too Large
@@ -39,6 +39,7 @@ REST_map = Map([
     Rule('/', endpoint=REST.upload_file, methods=['POST', ]),
     Rule('/account', endpoint=REST.account),
     Rule('/items', endpoint=REST.items),
+    Rule('/items', endpoint=REST.bookmarks, methods=['POST', ]),
     Rule('/items/new', endpoint=REST.items_new),
     Rule('/items/<id>', endpoint=REST.show),
 ])
@@ -60,6 +61,28 @@ def application(environ, start_response):
 
 if __name__ == '__main__':
     from werkzeug.serving import run_simple
+    from optparse import OptionParser, make_option
     
-    run_simple('127.0.0.1', 80, application, use_reloader=True)
+    options = [
+        make_option('--bind', dest='bind', default='0.0.0.0', type=str, metavar='IP',
+                     help="binding address, e.g. localhost [default: %default]"),
+        make_option('--port', dest='port', default=9000, type=int, metavar='PORT',
+                     help="port, e.g. 80 [default: %default]"),
+        make_option('--mdb-host', dest='mongodb_host', default='localhost',
+                    type=str, metavar='HOST', help="mongoDB host [default: %default]"),
+        make_option('--mdb-port', dest='mongodb_port', default=27017,
+                    type=int, metavar='PORT', help="mongoDB port [default: %default]"),
+        ]
+    
+    parser = OptionParser(option_list=options, usage="usage: %prog [options] [Hostname]")
+    options, args = parser.parse_args()
+    
+    HOSTNAME = args[0] if len(args) == 1 else 'localhost'
+    BIND_ADDRESS = options.bind
+    PORT = options.port
+    
+    MONGODB_HOST = options.mongodb_host
+    MONGODB_PORT = options.mongodb_port
+    
+    run_simple(BIND_ADDRESS, PORT, application, use_reloader=True)
     
