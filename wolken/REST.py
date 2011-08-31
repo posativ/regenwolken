@@ -9,7 +9,7 @@
 __version__ = "0.1.2-alpha"
 
 from functools import wraps
-from random import random, getrandbits
+from random import random, getrandbits, choice
 from urlparse import urlparse
 from os.path import basename
 from time import strftime, time, gmtime
@@ -24,10 +24,12 @@ except ImportError:
 
 from werkzeug.wrappers import Request, Response
 from wolken import Sessions
-from wolken import MONGODB_HOST, MONGODB_PORT
+from wolken import MONGODB_HOST, MONGODB_PORT, HOSTNAME
 
 from pymongo import Connection
+from pymongo.errors import DuplicateKeyError
 import gridfs
+from gridfs.errors import NoFile
 from bson.objectid import ObjectId
 
 sessions = Sessions(timeout=3600)
@@ -39,16 +41,16 @@ class Item:
     
     def __init__(self, name, hash):
         
-        self.href = "http://my.cl.ly/items/%x" % hash
+        self.href = "http://my.cl.ly/items/%s" % hash
         self.name = name
         self.private = True
         self.subscribed = False
-        self.url = "http://my.cl.ly/items/%x" % hash
-        self.content_url = "http://my.cl.ly/items/%x" % hash
+        self.url = "http://my.cl.ly/items/%s" % hash
+        self.content_url = "http://my.cl.ly/items/%s" % hash
         self.item_type = "bookmark"
         self.view_counter = 0
         self.icon = "http://my.cl.ly/images/item_types/bookmark.png"
-        self.remote_url = "http://my.cl.ly/items/%x" % hash
+        self.remote_url = "http://my.cl.ly/items/%s" % hash
         self.redirect_url = "http://my.cl.ly"
         self.source = "Regenwolke/%s LeaveTheCloud/Now" % __version__
         self.created_at = strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -112,8 +114,14 @@ def login(f):
 
 def index(environ, request):
     """NotImplemented -- only used in text/html"""
-    response = Response('It works!', 200)
-    return response
+    
+    L = []
+    print dir(fs)
+    for f in fs.list():
+        L.append(', '.join(f.filename, f.md5, str(f._id)))
+    
+    response = Response(json.dumps(L), 200)
+    #return response
 
 
 @login
@@ -153,15 +161,10 @@ def items(environ, request):
     except (ValueError, KeyError):
         return Response('Bad Request.', 400)
     
-    print db.accounts.find({'email': email})[0]
-    items = db.accounts.find({'email': email})[0]['items']
-    # if query.count() != 1:
-    #     return Response(json.dumps([]), 200, content_type='application/json; charset=utf-8')
-    # for i, mem in enumerate([entry_list[x*ipp:(x+1)*ipp]
-    #                             for x in range(len(entry_list)/ipp+1)] ):
+    items = db.accounts.find({'email': email})[0]['items'][::-1]
     for item in items[ipp*(page-1):ipp*page]:
-        print item
-        List.append(Item('name', getrandbits(12)).__dict__)
+        obj = fs.get(item)
+        List.append(Item(obj.filename, obj._id).__dict__)
     
     return Response(json.dumps(List), 200, content_type='application/json; charset=utf-8')
     
@@ -184,6 +187,10 @@ def items_new(environ, request):
 def upload_file(environ, request):
     '''upload file, when authorized with `key`'''
     
+    def genId(length=8, charset=string.ascii_lowercase+string.digits):
+        """generates a pseudorandom string of a-z0-9 of given length"""
+        return ''.join([choice(charset) for x in xrange(length)])
+    
     if not request.form.get('key') in sessions:
         return Response('Unauthorized.', 403)
     
@@ -193,20 +200,27 @@ def upload_file(environ, request):
     if not obj:
         return Response('Bad Request.', 400)
     
-    id = fs.put(obj, filename=obj.filename, upload_date=ts, content_type=obj.mimetype,
-                account=account)
+    while True:
+        _id = genId(8)
+        try:
+            fs.put(obj, _id=_id ,filename=obj.filename, upload_date=ts,
+                    content_type=obj.mimetype, account=account)
+            break
+        except DuplicateKeyError:
+            pass
     
     query = db.accounts.find({'email': account})[:]
     acc = query[:][0]
     items = acc['items']
-    items.append(id)
+    items.append(_id)
     db.accounts.update({'_id': acc['_id']}, {'$set': {'items': items}}, upsert=False)
     
-    obj = fs.get(id)
+    obj = fs.get(_id)
+    url = 'http://' + HOSTNAME + "/items/" + _id
     
     d = { "name": obj.name,
-          "href": 'http://' + environ['host'] + "/items/" + str(id),
-          "content_url": 'http://' + environ['host'] + "/items/"+ str(id),
+          "href": url,
+          "content_url": url,
           "created_at": obj.upload_date.strftime('%Y-%m-%dT%H:%M:%SZ'),
           "redirect_url": None,
           "deleted_at": None,
@@ -214,9 +228,9 @@ def upload_file(environ, request):
           "updated_at": obj.upload_date.strftime('%Y-%m-%dT%H:%M:%SZ'),
           #"remote_url": "http://f.cl.ly/items/070c0T2I0y3p0p3P053c/Bildschirmfoto%202011-08-26%20um%2022.14.39.png",
           "view_counter": 1,
-          "url": 'http://' + environ['host'] + "/items/"+ str(id),
-          "id": 8793473, "icon": "http://my.cl.ly/images/new/item-types/image.png",
-          "thumbnail_url": 'http://' + environ['host'] + '/thumb/' + str(id),
+          "url": url,
+          "id": _id, "icon": "http://my.cl.ly/images/new/item-types/image.png",
+          "thumbnail_url": 'http://' + HOSTNAME + '/thumbs/' + obj._id,
           "subscribed": False, "source": "Cloud/1.5.1 CFNetwork/520.0.13 Darwin/11.1.0 (x86_64) (MacBookPro6,2)",
           "item_type": "image"}
          
@@ -227,9 +241,10 @@ def show(environ, request, id):
     """returns file either as direct download with human-readable, original
     filename or inline display using whitelisting"""
     
-    id = ObjectId(id)
-    f = fs.get(id)
-    print f.content_type
+    try:
+        f = fs.get(id)
+    except NoFile:
+        return Response('File not found!', 404)
     if not f.content_type in ['image/png', 'image/jpg', ]:
         return Response(f, content_type=f.content_type, headers={'Content-Disposition':
                     'attachment; filename="%s"' % basename(f.filename)})
@@ -263,6 +278,6 @@ def register(environ, request):
     acc = Account(email=email, passwd=passwd, activated_at=strftime('%Y-%m-%dT%H:%M:%SZ'))
     db.accounts.insert(acc)
     
-    acc['id'] = db.accounts.count()+1; del acc['_id']
+    acc['id'] = db.accounts.count()+1; del acc['_id'] # JSONEncoder can't handle ObjectId
     return Response(json.dumps(acc), 201)
     
