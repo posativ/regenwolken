@@ -19,7 +19,7 @@ from werkzeug.routing import Map, Rule, Submount
 from werkzeug.wsgi import responder
 from werkzeug.datastructures import WWWAuthenticate
 
-from wolken import REST
+from wolken import REST, web
 from wolken import HOSTNAME, BIND_ADDRESS, PORT, MONGODB_HOST, MONGODB_PORT
 
 class LimitedRequest(Request):
@@ -27,11 +27,11 @@ class LimitedRequest(Request):
     max_content_length = 1024 * 1024 * 64 # max. 64 mb request size
 
 HTML_map = Map([
-    Rule('/', endpoint='web.index'),
-    Rule('/account', endpoint='web.account'),
-    Submount('/items', [
-        Rule('/', endpoint='web.items.index'),
-    ]),
+    Rule('/', endpoint=web.index),
+#    Rule('/account', endpoint='web.account'),
+ #   Submount('/items', [
+ #       Rule('/', endpoint='web.items.index'),
+ #   ]),
 ])
 
 REST_map = Map([
@@ -54,8 +54,8 @@ def application(environ, start_response):
     if request.headers.get('Accept', 'application/json') == 'application/json':
         urls = REST_map.bind_to_environ(environ)
     else:
-        urls = REST_map.bind_to_environ(environ)
-        # urls = HTML_map.bind_to_environ(environ)
+        #urls = REST_map.bind_to_environ(environ)
+        urls = HTML_map.bind_to_environ(environ)
 
     return urls.dispatch(lambda f, v: f(environ, request, **v),
                          catch_http_exceptions=True)
