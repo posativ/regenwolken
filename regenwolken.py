@@ -9,7 +9,7 @@
 #
 # `srv/wolken.py` is a simple webserver, allows you to POST and GET files.
 
-__version__ = "0.1.1-alpha"
+__version__ = "0.1.2-alpha"
 
 import sys; reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -42,6 +42,7 @@ REST_map = Map([
     Rule('/items', endpoint=REST.bookmarks, methods=['POST', ]),
     Rule('/items/new', endpoint=REST.items_new),
     Rule('/items/<id>', endpoint=REST.show),
+    Rule('/register', endpoint=REST.register, methods=['POST', ]),
 ])
 
 @responder

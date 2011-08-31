@@ -4,14 +4,18 @@
 # Copyright 2011 posativ <info@posativ.org>. All rights reserved.
 # License: BSD Style, 2 clauses.
 
+# TODO: hashing passwords + salt
+
 __version__ = "0.1.2-alpha"
 
 from functools import wraps
 from random import random, getrandbits
 from urlparse import urlparse
 from os.path import basename
-import time
+from time import strftime, time, gmtime
+from datetime import datetime
 import hashlib
+import string
 
 try:
     import json
@@ -31,7 +35,7 @@ sessions = Sessions(timeout=3600)
 db = Connection(MONGODB_HOST, MONGODB_PORT)['cloudapp']
 fs = gridfs.GridFS(db)
 
-class Item(dict):
+class Item:
     
     def __init__(self, name, hash):
         
@@ -47,12 +51,30 @@ class Item(dict):
         self.remote_url = "http://my.cl.ly/items/%x" % hash
         self.redirect_url = "http://my.cl.ly"
         self.source = "Regenwolke/%s LeaveTheCloud/Now" % __version__
-        self.created_at = time.strftime('%Y-%m-%dT%H:%M:%SZ')
-        self.updated_at = time.strftime('%Y-%m-%dT%H:%M:%SZ')
+        self.created_at = strftime('%Y-%m-%dT%H:%M:%SZ')
+        self.updated_at = strftime('%Y-%m-%dT%H:%M:%SZ')
         self.deleted_at = None
-        
-        self.update(self.__dict__)
+
+
+def Account(email, passwd, **kw):
     
+    __dict__ = {
+        'domain': None,
+        'domain_home_page': None,
+        'private_items': True,
+        'subscribed': False,
+        'alpha': False,
+        'created_at': strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'activated_at': None,
+        "items": [],
+        'email': email,
+        'passwd': passwd
+    }
+    
+    __dict__.update(kw)
+    return __dict__
+
 
 def login(f):
     """login decorator using HTTP Digest Authentication.  Pattern based on
@@ -60,24 +82,25 @@ def login(f):
     
     def md5(data):
         return hashlib.md5(data).hexdigest()
-
+    
     def prove(auth):
         """calculates  digest response (MD5 and qop)"""
-    
-        users = {'leave@thecloud': 'now'}
-    
+        
         def A1(auth):
-            passwd = users.get(auth.username, '')
+            query = db.accounts.find({'email': auth.username})
+            if query.count() == 1:
+                passwd = query[0]['passwd']
+            else:
+                passwd = '%x' % getrandbits(256)
             return md5(auth.username + ':' + auth.realm + ':' + passwd)
         
         b = ':'.join([auth.nonce, auth.nc, auth.cnonce, 'auth', md5('GET:' + auth.uri)])
-    
+        
         return md5(A1(auth) + ':' + b)
     
-    # @wraps(f)
     def dec(env, req, **kwargs):
         if not req.authorization:
-            response = Response(status=401)            
+            response = Response(status=401)
             response.www_authenticate.set_digest('Application', nonce='%x' % getrandbits(128),
                         qop=('auth', ), opaque='%x' % getrandbits(128), algorithm='MD5')
             return response
@@ -97,8 +120,8 @@ def index(environ, request):
 def account(environ, request):
     """returns account details"""
     
-    rnd_time = time.gmtime(time.time() - 1000*random())
-    ts = time.strftime('%Y-%m-%dT%H:%M:%SZ', rnd_time)
+    rnd_time = gmtime(time() - 1000*random())
+    ts = strftime('%Y-%m-%dT%H:%M:%SZ', rnd_time)
     d = { "created_at": ts, "activated_at": ts,
           "subscription_expires_at": None,
           "updated_at": ts, "subscribed": False,
@@ -106,12 +129,13 @@ def account(environ, request):
           "private_items": True,
           "domain_home_page": None,
           "email": "info@example.org",
-          "alpha": False
+          "alpha": False,
+          "items": []
          }
-
-    return Response(json.dumps(d), 200, content_type='application/json; charset=utf-8')
-
     
+    return Response(json.dumps(d), 200, content_type='application/json; charset=utf-8')
+    
+
 @login
 def items(environ, request):
     '''list items from user'''
@@ -119,15 +143,29 @@ def items(environ, request):
     ParseResult = urlparse(request.url)
     if ParseResult.query == '':
         return Response('Nothing to see here', 200)
-        
+    
     params = dict([part.split('=', 1) for part in ParseResult.query.split('&')])
     List = []
-    for x in range(int(params['per_page'])):
-        List.append(Item('name', getrandbits(12)))
+    try:
+        ipp = int(params['per_page'])
+        page = int(params['page'])
+        email = request.authorization.username
+    except (ValueError, KeyError):
+        return Response('Bad Request.', 400)
+    
+    print db.accounts.find({'email': email})[0]
+    items = db.accounts.find({'email': email})[0]['items']
+    # if query.count() != 1:
+    #     return Response(json.dumps([]), 200, content_type='application/json; charset=utf-8')
+    # for i, mem in enumerate([entry_list[x*ipp:(x+1)*ipp]
+    #                             for x in range(len(entry_list)/ipp+1)] ):
+    for item in items[ipp*(page-1):ipp*page]:
+        print item
+        List.append(Item('name', getrandbits(12)).__dict__)
     
     return Response(json.dumps(List), 200, content_type='application/json; charset=utf-8')
-
     
+
 @login
 def items_new(environ, request):
     '''generates a new key for upload process'''
@@ -139,7 +177,7 @@ def items_new(environ, request):
                       "key": id
                     },
         }
-        
+    
     return Response(json.dumps(d), 200, content_type='application/json; charset=utf-8')
 
 
@@ -150,13 +188,20 @@ def upload_file(environ, request):
         return Response('Unauthorized.', 403)
     
     account = sessions.get(request.form.get('key'))['account']
-    ts = time.strftime('%Y-%m-%dT%H:%M:%SZ')
+    ts = strftime('%Y-%m-%dT%H:%M:%SZ')
     obj = request.files.get('file')
     if not obj:
         return Response('Bad Request.', 400)
     
     id = fs.put(obj, filename=obj.filename, upload_date=ts, content_type=obj.mimetype,
                 account=account)
+    
+    query = db.accounts.find({'email': account})[:]
+    acc = query[:][0]
+    items = acc['items']
+    items.append(id)
+    db.accounts.update({'_id': acc['_id']}, {'$set': {'items': items}}, upsert=False)
+    
     obj = fs.get(id)
     
     d = { "name": obj.name,
@@ -174,20 +219,50 @@ def upload_file(environ, request):
           "thumbnail_url": 'http://' + environ['host'] + '/thumb/' + str(id),
           "subscribed": False, "source": "Cloud/1.5.1 CFNetwork/520.0.13 Darwin/11.1.0 (x86_64) (MacBookPro6,2)",
           "item_type": "image"}
+         
     return Response(json.dumps(d), content_type='application/json')
 
 
 def show(environ, request, id):
     """returns file either as direct download with human-readable, original
     filename or inline display using whitelisting"""
-
+    
     id = ObjectId(id)
     f = fs.get(id)
-    print f.content_type 
+    print f.content_type
     if not f.content_type in ['image/png', 'image/jpg', ]:
         return Response(f, content_type=f.content_type, headers={'Content-Disposition':
                     'attachment; filename="%s"' % basename(f.filename)})
     return Response(f, content_type=f.content_type)
 
+
 def bookmarks(environ, request):
-    pass    
+    raise NotImplementedError
+ 
+
+def register(environ, request):
+    """Allows (instant) registration of new users."""
+    
+    if len(request.data) > 200:
+        return Response('Bad Request.', 400)
+    try:
+        d = json.loads(request.data)
+        email = d['user']['email']
+        passwd = d['user']['password']
+    except (ValueError, KeyError):
+        return Response('Bad Request.', 400)
+    
+    # TODO: allow more characters, unicode -> ascii, before filter
+    allowed_chars = string.digits + string.ascii_letters + '.- @'
+    if filter(lambda c: not c in allowed_chars, email):
+        return Response('Bad Request.', 400)
+    
+    if db.accounts.find({'email': email}).count() > 0:
+        return Response('Not Acceptable.', 406)
+    
+    acc = Account(email=email, passwd=passwd, activated_at=strftime('%Y-%m-%dT%H:%M:%SZ'))
+    db.accounts.insert(acc)
+    
+    acc['id'] = db.accounts.count()+1; del acc['_id']
+    return Response(json.dumps(acc), 201)
+    

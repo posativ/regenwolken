@@ -4,6 +4,8 @@
 # Copyright 2011 posativ <info@posativ.org>. All rights reserved.
 # License: BSD Style, 2 clauses.
 
+__version__ = "0.1.2-alpha"
+
 import time
 from uuid import uuid4
 import random
@@ -13,6 +15,8 @@ BIND_ADDRESS = '0.0.0.'
 PORT = 9000
 MONGODB_HOST = '127.0.0.1'
 MONGODB_PORT = 27017
+
+ALLOW_REGISTRATION = True
 
 class Sessions:
     '''A simple in-memory session handler.  Uses dict[session_id] = (timestamp, value)
