@@ -37,10 +37,12 @@ db = Connection(SETTINGS.MONGODB_HOST, SETTINGS.MONGODB_PORT)['cloudapp']
 fs = gridfs.GridFS(db)
 #fs = wolken.Grid('fsdb')
 
-def Item(name, _id, **kw):
+HOSTNAME = SETTINGS.HOSTNAME
+
+def Item(filename, _id, **kw):
     """JSON-compatible dict representing Item.  
     
-        href:           <unknown>
+        href:           used for renaming -> http://developer.getcloudapp.com/rename-item
         name:           item's name, taken from filename
         private:        returns in longer hash (not needed imho)
         subscribed:     <unknown>
@@ -59,18 +61,18 @@ def Item(name, _id, **kw):
     """
         
     __dict__ = {
-        "href": "http://my.cl.ly/items/%s" % _id,
-        "name": name,
+        "href": "http://%s/items/%s" % (HOSTNAME, _id),
+        "name": filename,
         "private": True,
         "subscribed": False,
-        "url": "http://my.cl.ly/items/%s" % _id,
-        "content_url": "http://my.cl.ly/items/%s" % _id,
+        "url": "http://%s/items/%s" % (HOSTNAME, _id),
+        "content_url": "http://%s/items/%s" % (HOSTNAME, _id),
         "item_type": "bookmark",
         "view_counter": 0,
-        "icon": "http://my.cl.ly/images/item_types/bookmark.png",
-        "remote_url": "http://my.cl.ly/items/%s" % _id,
-        "redirect_url": "http://my.cl.ly",
-        "source": "Regenwolke/%s LeaveTheCloud/Now" % __version__,
+        "icon": "http://%s/images/item_types/bookmark.png" % HOSTNAME,
+        "remote_url": "http://%s/items/%s" % (HOSTNAME, _id),
+        "redirect_url": "http://%s" % HOSTNAME,
+        "source": "Regenwolken/%s LeaveTheCloud/Now" % __version__,
         "created_at": strftime('%Y-%m-%dT%H:%M:%SZ'),
         "updated_at": strftime('%Y-%m-%dT%H:%M:%SZ'),
         "deleted_at": None }
@@ -250,24 +252,12 @@ def upload_file(environ, request):
     
     obj = fs.get(_id)
     url = 'http://' + SETTINGS.HOSTNAME + "/items/" + _id
-        
-    d = { "name": obj.filename,
-          "href": url,
-          "content_url": url,
-          "created_at": timestamp,
-          "redirect_url": None,
-          "deleted_at": None,
-          "private": False,
-          "updated_at": timestamp,
-          #"remote_url": "http://f.cl.ly/items/070c0T2I0y3p0p3P053c/Bildschirmfoto%202011-08-26%20um%2022.14.39.png",
-          "view_counter": 1,
-          "url": url,
-          "id": _id, "icon": "http://my.cl.ly/images/new/item-types/image.png",
-          "thumbnail_url": 'http://' + SETTINGS.HOSTNAME + '/thumbs/' + obj._id,
-          "subscribed": False, "source": "Cloud/1.5.1 CFNetwork/520.0.13 Darwin/11.1.0 (x86_64) (MacBookPro6,2)",
-          "item_type": "image"}
+    item_type = obj.content_type.split('/', 1)[0]
+    
+    new = Item(filename=obj.filename, _id=_id, created_at=timestamp,
+               updated_at=timestamp, view_counter=0, item_type=item_type)
          
-    return Response(json.dumps(d), content_type='application/json')
+    return Response(json.dumps(new), content_type='application/json')
 
 
 def show(environ, request, id):
