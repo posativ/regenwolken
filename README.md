@@ -100,6 +100,10 @@ Cloud.app working) of [CloudApp's API](http://developer.getcloudapp.com/).
     /register   - register new account (currently instantly activated)
 
 
+### Issues
+
+- [ruby's cloudapp wrapper can't authenticate](https://github.com/posativ/regenwolken/issues/8)
+
 ### Links:
 
 - [rixth/raincloud](https://github.com/rixth/raincloud) – a (full?) cloud
