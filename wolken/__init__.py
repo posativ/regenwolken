@@ -6,21 +6,126 @@
 
 __version__ = "0.1.2-alpha"
 
-import time
+import sys
+import os
+from os.path import isfile, isdir, exists, join, dirname, basename
+import time, datetime
 from uuid import uuid4
 import random
+import json
+import hashlib
 
-HOSTNAME = 'localhost'
-BIND_ADDRESS = '0.0.0.'
-PORT = 9000
-MONGODB_HOST = '127.0.0.1'
-MONGODB_PORT = 27017
+import __builtin__
 
-ALLOW_REGISTRATION = True
+for line in open('conf.yaml'):
+    line = line.strip()
+    if line and not line.startswith('#'):
+        try:
+            key, value = line.split(':')
+            key, value = key.strip(), value.strip()
+        except ValueError:
+            print >> sys.stderr, 'line is wrong `%s`' % line
+            sys.exit(1)
+        
+        if value.isdigit():
+            value = int(value)
+        __builtin__.__dict__[key.upper()] = value
+        
+
+class NoFile(Exception): pass
+class DuplicateKeyError(Exception): pass
+
+
+class File(file):
+    """A wrapper for the file class, extended to act like GridOut"""
+    
+    def __init__(self, *args, **kwargs):
+        file.__init__(self, *args, **kwargs)
+        
+    def update(self, **entries):
+        self.__dict__.update(entries)
+
+
+class Grid:
+    '''Abstraction layer to save files in filesystem instead of GridFS.
+    
+    It stores every file as truncated md5 hash (8 characters long) to
+    `datadir`/`md5 of $year$month$day`/ and updates the index file of this
+    day (.index, js object notation).
+    
+    It is intended as a leightweight MongoDB alternative using a json-based
+    database storage as well. MongoDB+Grid is not planned.'''
+    
+    def __init__(self, datadir):
+        '''sets/creates data dir and builds a shortcut for the .index-files.'''
+        
+        if not isdir(datadir):
+            try:
+                os.makedirs(datadir)
+            except OSError, e:
+                print e
+                print >> sys.stderr, 'could not create %s' % datadir
+                sys.exit(1)
+                
+        self.index = join(datadir, '%s' ,'.index')
+        self.datadir = datadir
+
+    def put(self, obj, _id, filename, upload_date, content_type, account):
+        """save file to Grid.  This is currently hard-coded and represents
+        the implementation in wolken/REST.py:upload_file."""
+        
+        try:
+            self.get(_id)
+            raise DuplicateKeyError
+        except NoFile:
+            pass
+        
+        hdir = hashlib.sha1(time.strftime('%Y%m%d')).hexdigest()[:8] # hash dir
+        path = join(self.datadir, hdir, _id)
+        if not isdir(dirname(path)):
+            os.mkdir(dirname(path))
+        # save file
+        obj.save(path)
+        
+        if not exists(self.index % hdir):
+            f = open(self.index % hdir, 'w')
+            f.close()
+            index = {}
+        else:
+            f = open(self.index % hdir, 'r')
+            index = json.load(f)
+            f.close()
+        
+        index[_id] = {'filename': filename, 'upload_date': upload_date,
+                      'content_type': content_type, 'account': account,
+                      'name': obj.name}
+        
+        f = open(self.index % hdir, 'w')
+        json.dump(index, f)
+        f.close()
+        
+        return _id
+        
+    def get(self, _id):
+        """traverse datadir and returns File (GridOut-like) if found else None"""
+        
+        dirs = [ts for ts in os.listdir(self.datadir)
+                    if isdir(join(self.datadir, ts))]
+        for ts in dirs:
+            f = open(self.index % ts, 'r')
+            index = json.load(f)
+            f.close()
+            if _id in index:
+                f = File(join(self.datadir, ts, _id))
+                f.update(_id=_id, **index[_id])
+                return f
+        else:
+            raise NoFile
+            
 
 class Sessions:
     '''A simple in-memory session handler.  Uses dict[session_id] = (timestamp, value)
-    sheme, automatic timout after 15 minutes.
+    scheme, automatic timout after 15 minutes.
     
     session_id -- uuid.uuid4().hex
     timestamp -- time.time()
