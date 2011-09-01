@@ -129,7 +129,7 @@ def account(environ, request):
     d = { "created_at": ts, "activated_at": ts,
           "subscription_expires_at": None,
           "updated_at": ts, "subscribed": False,
-          "domain": conf.HOSTNAME, "id": 12345,
+          "domain": SETTINGS.HOSTNAME, "id": 12345,
           "private_items": True,
           "domain_home_page": None,
           "email": "info@example.org",
