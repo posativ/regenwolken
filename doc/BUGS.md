@@ -17,8 +17,10 @@ REST-API Features:
     
 Bugs:
 
-    - adds a \u0000 char at the end of filename. Server-side seems to fix it.
-      Would break cloudapp_api e.g
+    - automatic screenhots uploading adds a \u0000 char to the end of
+      the filename. Server-side seems to fix it.  Would break e.g. `cloudapp_api`
+    - /register: HTTP 201 -> success, but there is no way, to indicate, what
+      could be wrong with the current username (exists e.g.)
       
       
 ## cloudapp_api (Ruby wrapper)
