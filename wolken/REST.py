@@ -23,6 +23,7 @@ except ImportError:
     import simplejson as json
 
 from werkzeug.wrappers import Request, Response
+import wolken
 from wolken import Sessions
 from wolken import MONGODB_HOST, MONGODB_PORT, HOSTNAME
 
@@ -36,26 +37,31 @@ sessions = Sessions(timeout=3600)
 
 db = Connection(MONGODB_HOST, MONGODB_PORT)['cloudapp']
 fs = gridfs.GridFS(db)
+# fs = wolken.Grid('fsdb')
 
-class Item:
-    
-    def __init__(self, name, hash):
+def Item(name, _id, **kw):
+    """JSON-compatible dict representing Item"""
         
-        self.href = "http://my.cl.ly/items/%s" % hash
-        self.name = name
-        self.private = True
-        self.subscribed = False
-        self.url = "http://my.cl.ly/items/%s" % hash
-        self.content_url = "http://my.cl.ly/items/%s" % hash
-        self.item_type = "bookmark"
-        self.view_counter = 0
-        self.icon = "http://my.cl.ly/images/item_types/bookmark.png"
-        self.remote_url = "http://my.cl.ly/items/%s" % hash
-        self.redirect_url = "http://my.cl.ly"
-        self.source = "Regenwolke/%s LeaveTheCloud/Now" % __version__
-        self.created_at = strftime('%Y-%m-%dT%H:%M:%SZ')
-        self.updated_at = strftime('%Y-%m-%dT%H:%M:%SZ')
-        self.deleted_at = None
+    __dict__ = {
+        "href": "http://my.cl.ly/items/%s" % _id,
+        "name": name,
+        "private": True,
+        "subscribed": False,
+        "url": "http://my.cl.ly/items/%s" % _id,
+        "content_url": "http://my.cl.ly/items/%s" % _id,
+        "item_type": "bookmark",
+        "view_counter": 0,
+        "icon": "http://my.cl.ly/images/item_types/bookmark.png",
+        "remote_url": "http://my.cl.ly/items/%s" % _id,
+        "redirect_url": "http://my.cl.ly",
+        "source": "Regenwolke/%s LeaveTheCloud/Now" % __version__,
+        "created_at": strftime('%Y-%m-%dT%H:%M:%SZ'),
+        "updated_at": strftime('%Y-%m-%dT%H:%M:%SZ'),
+        "deleted_at": None }
+        
+    __dict__.update(kw)
+    return __dict__
+        
 
 
 def Account(email, passwd, **kw):
@@ -96,10 +102,14 @@ def login(f):
                 passwd = '%x' % getrandbits(256)
             return md5(auth.username + ':' + auth.realm + ':' + passwd)
         
-        b = ':'.join([auth.nonce, auth.nc, auth.cnonce, 'auth', md5('GET:' + auth.uri)])
-        
-        return md5(A1(auth) + ':' + b)
-    
+        if str(auth.qop) == 'auth':# and auth.nc and auth.cnonce:
+            A2 = ':'.join([auth.nonce, auth.nc, auth.cnonce, 'auth', md5('GET:' + auth.uri)])
+            return md5(A1(auth) + ':' + A2)
+        else:
+            # compatibility with RFC 2069: https://tools.ietf.org/html/rfc2069
+            A2 = ':'.join([auth.nonce, md5('GET:' + auth.uri)])
+            return md5(A1(auth) + ':' + A2)
+
     def dec(env, req, **kwargs):
         if not req.authorization:
             response = Response(status=401)
@@ -112,18 +122,6 @@ def login(f):
     return dec
 
 
-def index(environ, request):
-    """NotImplemented -- only used in text/html"""
-    
-    L = []
-    print dir(fs)
-    for f in fs.list():
-        L.append(', '.join(f.filename, f.md5, str(f._id)))
-    
-    response = Response(json.dumps(L), 200)
-    #return response
-
-
 @login
 def account(environ, request):
     """returns account details"""
@@ -133,7 +131,7 @@ def account(environ, request):
     d = { "created_at": ts, "activated_at": ts,
           "subscription_expires_at": None,
           "updated_at": ts, "subscribed": False,
-          "domain": environ['host'], "id": 12345,
+          "domain": HOSTNAME, "id": 12345,
           "private_items": True,
           "domain_home_page": None,
           "email": "info@example.org",
@@ -164,7 +162,7 @@ def items(environ, request):
     items = db.accounts.find({'email': email})[0]['items'][::-1]
     for item in items[ipp*(page-1):ipp*page]:
         obj = fs.get(item)
-        List.append(Item(obj.filename, obj._id).__dict__)
+        List.append(Item(obj.filename, obj._id))
     
     return Response(json.dumps(List), 200, content_type='application/json; charset=utf-8')
     
@@ -195,7 +193,7 @@ def upload_file(environ, request):
         return Response('Unauthorized.', 403)
     
     account = sessions.get(request.form.get('key'))['account']
-    ts = strftime('%Y-%m-%dT%H:%M:%SZ')
+    timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
     obj = request.files.get('file')
     if not obj:
         return Response('Bad Request.', 400)
@@ -203,7 +201,7 @@ def upload_file(environ, request):
     while True:
         _id = genId(8)
         try:
-            fs.put(obj, _id=_id ,filename=obj.filename, upload_date=ts,
+            fs.put(obj, _id=_id ,filename=obj.filename, upload_date=timestamp,
                     content_type=obj.mimetype, account=account)
             break
         except DuplicateKeyError:
@@ -217,15 +215,15 @@ def upload_file(environ, request):
     
     obj = fs.get(_id)
     url = 'http://' + HOSTNAME + "/items/" + _id
-    
+        
     d = { "name": obj.name,
           "href": url,
           "content_url": url,
-          "created_at": obj.upload_date.strftime('%Y-%m-%dT%H:%M:%SZ'),
+          "created_at": timestamp,
           "redirect_url": None,
           "deleted_at": None,
           "private": False,
-          "updated_at": obj.upload_date.strftime('%Y-%m-%dT%H:%M:%SZ'),
+          "updated_at": timestamp,
           #"remote_url": "http://f.cl.ly/items/070c0T2I0y3p0p3P053c/Bildschirmfoto%202011-08-26%20um%2022.14.39.png",
           "view_counter": 1,
           "url": url,
@@ -259,7 +257,7 @@ def register(environ, request):
     """Allows (instant) registration of new users."""
     
     if len(request.data) > 200:
-        return Response('Bad Request.', 400)
+        return Response('Request Entity Too Large', 413)
     try:
         d = json.loads(request.data)
         email = d['user']['email']
