@@ -294,7 +294,7 @@ def show(environ, request, id):
         f = fs.get(id)
     except NoFile:
         return Response('File not found!', 404)
-    if not f.content_type in ['image/png', 'image/jpg', ]:
+    if not f.content_type.split('/', 1)[0] in ['image', 'text']:
         return Response(f, content_type=f.content_type, headers={'Content-Disposition':
                     'attachment; filename="%s"' % basename(f.filename)})
     return Response(f, content_type=f.content_type)
