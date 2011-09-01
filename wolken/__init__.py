@@ -8,29 +8,34 @@ __version__ = "0.1.2-alpha"
 
 import sys
 import os
-from os.path import isfile, isdir, exists, join, dirname, basename
-import time, datetime
+from os.path import isdir, exists, join, dirname
+import time
 from uuid import uuid4
 import random
 import json
 import hashlib
 
-import __builtin__
 
-for line in open('conf.yaml'):
-    line = line.strip()
-    if line and not line.startswith('#'):
-        try:
-            key, value = line.split(':')
-            key, value = key.strip(), value.strip()
-        except ValueError:
-            print >> sys.stderr, 'line is wrong `%s`' % line
-            sys.exit(1)
-        
-        if value.isdigit():
-            value = int(value)
-        __builtin__.__dict__[key.upper()] = value
-        
+class Config():
+    """stores conf.yaml"""
+    
+    def __init__(self):
+
+        for line in open('conf.yaml'):
+            line = line.strip()
+            if line and not line.startswith('#'):
+                try:
+                    key, value = line.split(':')
+                    key, value = key.strip(), value.strip()
+                except ValueError:
+                    print >> sys.stderr, 'line is wrong `%s`' % line
+                    sys.exit(1)
+    
+                if value.isdigit():
+                    value = int(value)
+                self.__dict__[key.upper()] = value
+            
+SETTINGS = Config()
 
 class NoFile(Exception): pass
 class DuplicateKeyError(Exception): pass

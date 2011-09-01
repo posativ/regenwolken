@@ -23,8 +23,7 @@ except ImportError:
     import simplejson as json
 
 from werkzeug.wrappers import Request, Response
-import wolken
-from wolken import Sessions
+from wolken import Sessions, SETTINGS
 
 from pymongo import Connection
 from pymongo.errors import DuplicateKeyError
@@ -34,7 +33,7 @@ from bson.objectid import ObjectId
 
 sessions = Sessions(timeout=3600)
 
-db = Connection(MONGODB_HOST, MONGODB_PORT)['cloudapp']
+db = Connection(SETTINGS.MONGODB_HOST, SETTINGS.MONGODB_PORT)['cloudapp']
 fs = gridfs.GridFS(db)
 #fs = wolken.Grid('fsdb')
 
@@ -130,7 +129,7 @@ def account(environ, request):
     d = { "created_at": ts, "activated_at": ts,
           "subscription_expires_at": None,
           "updated_at": ts, "subscribed": False,
-          "domain": HOSTNAME, "id": 12345,
+          "domain": conf.HOSTNAME, "id": 12345,
           "private_items": True,
           "domain_home_page": None,
           "email": "info@example.org",
@@ -214,8 +213,7 @@ def upload_file(environ, request):
     db.accounts.update({'_id': acc['_id']}, {'$set': {'items': items}}, upsert=False)
     
     obj = fs.get(_id)
-    url = 'http://' + HOSTNAME + "/items/" + _id
-    print HOSTNAME
+    url = 'http://' + SETTINGS.HOSTNAME + "/items/" + _id
         
     d = { "name": obj.filename,
           "href": url,
@@ -229,7 +227,7 @@ def upload_file(environ, request):
           "view_counter": 1,
           "url": url,
           "id": _id, "icon": "http://my.cl.ly/images/new/item-types/image.png",
-          "thumbnail_url": 'http://' + HOSTNAME + '/thumbs/' + obj._id,
+          "thumbnail_url": 'http://' + SETTINGS.HOSTNAME + '/thumbs/' + obj._id,
           "subscribed": False, "source": "Cloud/1.5.1 CFNetwork/520.0.13 Darwin/11.1.0 (x86_64) (MacBookPro6,2)",
           "item_type": "image"}
          
@@ -280,3 +278,8 @@ def register(environ, request):
     acc['id'] = db.accounts.count()+1; del acc['_id'] # JSONEncoder can't handle ObjectId
     return Response(json.dumps(acc), 201)
     
+@login
+def account_stats(environ, request):
+
+    d = {'items': 42, 'views': 1337}
+    return Response(json.dumps(d), 200)

@@ -6,8 +6,6 @@
 #
 #
 # Wolken is a Cloud.app clone, with leave the cloud in mind.
-#
-# `srv/wolken.py` is a simple webserver, allows you to POST and GET files.
 
 __version__ = "0.1.2-alpha"
 
@@ -17,17 +15,9 @@ sys.setdefaultencoding('utf-8')
 from werkzeug.wrappers import Request, Response
 from werkzeug.routing import Map, Rule, Submount
 from werkzeug.wsgi import responder
-from werkzeug.datastructures import WWWAuthenticate
-
-# may changed via conf.yaml
-HOSTNAME = "localhost"
-BIND_ADDRESS = "0.0.0.0"
-PORT = 80
-MONGODB_HOST = "127.0.0.1"
-MONGODB_PORT = 27017
 
 # inits global variables HOSTNAME, PORT and so on #FIXME!!
-from wolken import REST, web
+from wolken import SETTINGS, REST, web
 
 class LimitedRequest(Request):
     # FIXME: Cloud.app can not handle 413 Request Entity Too Large
@@ -44,6 +34,7 @@ HTML_map = Map([
 REST_map = Map([
     Rule('/', endpoint=REST.upload_file, methods=['POST', ]),
     Rule('/account', endpoint=REST.account),
+    Rule('/account/stats', endpoint=REST.account_stats),
     Rule('/items', endpoint=REST.items),
     Rule('/items', endpoint=REST.bookmarks, methods=['POST', ]),
     Rule('/items/new', endpoint=REST.items_new),
@@ -68,4 +59,5 @@ def application(environ, start_response):
 
 if __name__ == '__main__':
     from werkzeug.serving import run_simple    
-    run_simple(BIND_ADDRESS, PORT, application, use_reloader=True)
+    run_simple(SETTINGS.BIND_ADDRESS, SETTINGS.PORT,
+               application, use_reloader=True)
