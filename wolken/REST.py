@@ -38,7 +38,25 @@ fs = gridfs.GridFS(db)
 #fs = wolken.Grid('fsdb')
 
 def Item(name, _id, **kw):
-    """JSON-compatible dict representing Item"""
+    """JSON-compatible dict representing Item.  
+    
+        href:           <unknown>
+        name:           item's name, taken from filename
+        private:        returns in longer hash (not needed imho)
+        subscribed:     <unknown>
+        url:            url to this file
+        content_url:    <unknown>
+        item_type:      image, bookmark, ... there are more
+        view_counter:   obviously
+        icon:           some picture to display `item_type`
+        remote_url:     <unknown>
+        thumbnail_url:  <url to thumbnail, when used?>
+        redirect_url:   <unknown>
+        source:         client referrer
+        created_at:     timestamp created – '%Y-%m-%dT%H:%M:%SZ'
+        updated_at:     timestamp updated – '%Y-%m-%dT%H:%M:%SZ'
+        updated_at:     timestamp deleted – '%Y-%m-%dT%H:%M:%SZ'
+    """
         
     __dict__ = {
         "href": "http://my.cl.ly/items/%s" % _id,
@@ -63,6 +81,21 @@ def Item(name, _id, **kw):
 
 
 def Account(email, passwd, **kw):
+    """JSON-compatible dict representing cloudapp's account
+    
+        domain:           <unknown>
+        domain_home_page: <unknown>
+        private_items:    <unknown>
+        subscribed:       <unkown> pro purchased?
+        alpha:            <unkown> wtf?
+        created_at:       timestamp created – '%Y-%m-%dT%H:%M:%SZ'
+        updated_at:       timestamp updated – '%Y-%m-%dT%H:%M:%SZ'
+        activated_at:     timestamp account activated, per default None
+        items:            (not official) list of items by this account
+        email:            username of this account, characters can be any
+                          of "a-zA-Z0-9.- @"
+        password:         cleartext password TODO: hashing
+    """
     
     __dict__ = {
         'domain': None,
@@ -109,6 +142,8 @@ def login(f):
             return md5(A1(auth) + ':' + A2)
 
     def dec(env, req, **kwargs):
+        """This decorater function will send an authenticate header, if none
+        is present and denies access, if HTTP Digest Auth failed."""
         if not req.authorization:
             response = Response(status=401)
             response.www_authenticate.set_digest('Application', nonce='%x' % getrandbits(128),
@@ -122,7 +157,7 @@ def login(f):
 
 @login
 def account(environ, request):
-    """returns account details"""
+    """returns account details, see Account for furhter details."""
     
     rnd_time = gmtime(time() - 1000*random())
     ts = strftime('%Y-%m-%dT%H:%M:%SZ', rnd_time)
