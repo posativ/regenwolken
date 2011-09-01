@@ -25,7 +25,6 @@ except ImportError:
 from werkzeug.wrappers import Request, Response
 import wolken
 from wolken import Sessions
-from wolken import MONGODB_HOST, MONGODB_PORT, HOSTNAME
 
 from pymongo import Connection
 from pymongo.errors import DuplicateKeyError
@@ -37,7 +36,7 @@ sessions = Sessions(timeout=3600)
 
 db = Connection(MONGODB_HOST, MONGODB_PORT)['cloudapp']
 fs = gridfs.GridFS(db)
-# fs = wolken.Grid('fsdb')
+#fs = wolken.Grid('fsdb')
 
 def Item(name, _id, **kw):
     """JSON-compatible dict representing Item"""
@@ -201,8 +200,9 @@ def upload_file(environ, request):
     while True:
         _id = genId(8)
         try:
-            fs.put(obj, _id=_id ,filename=obj.filename, upload_date=timestamp,
-                    content_type=obj.mimetype, account=account)
+            fs.put(obj, _id=_id ,filename=obj.filename.replace('\u0000', ''),
+                   upload_date=timestamp, content_type=obj.mimetype,
+                   account=account)
             break
         except DuplicateKeyError:
             pass
@@ -215,8 +215,9 @@ def upload_file(environ, request):
     
     obj = fs.get(_id)
     url = 'http://' + HOSTNAME + "/items/" + _id
+    print HOSTNAME
         
-    d = { "name": obj.name,
+    d = { "name": obj.filename,
           "href": url,
           "content_url": url,
           "created_at": timestamp,
