@@ -146,9 +146,10 @@ def items(environ, request):
     
     ParseResult = urlparse(request.url)
     if ParseResult.query == '':
-        return Response('Nothing to see here', 200)
+        params = {'per_page': '5', 'page': '1'}
+    else:
+        params = dict([part.split('=', 1) for part in ParseResult.query.split('&')])
     
-    params = dict([part.split('=', 1) for part in ParseResult.query.split('&')])
     List = []
     try:
         ipp = int(params['per_page'])
