@@ -5,6 +5,7 @@
 # License: BSD Style, 2 clauses.
 
 # TODO: hashing passwords + salt
+# TODO: rework json Item generation and feature updated_at timestamp
 
 __version__ = "0.1.2-alpha"
 
@@ -179,7 +180,23 @@ def account(environ, request):
 
 @login
 def items(environ, request):
-    '''list items from user'''
+    '''list items from user
+    
+        Options Hash (opts):
+
+        :page (Integer) — default: 1 —
+
+        Page number starting at 1
+        :per_page (Integer) — default: 5 —
+
+        Number of items per page
+        :type (String) — default: 'image' —
+
+        Filter items by type (image, bookmark, text, archive, audio, video, or unknown)
+        :deleted (Boolean) — default: true —
+
+        Show trashed drops
+    '''
     
     ParseResult = urlparse(request.url)
     if ParseResult.query == '':
@@ -198,7 +215,11 @@ def items(environ, request):
     items = db.accounts.find({'email': email})[0]['items'][::-1]
     for item in items[ipp*(page-1):ipp*page]:
         obj = fs.get(item)
-        List.append(Item(obj.filename, obj._id))
+        item_type = obj.content_type.split('/', 1)[0]
+        ts = obj.upload_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        x = Item(filename=obj.filename, _id=item, created_at=ts,
+                 updated_at=ts, view_counter=0, item_type=item_type)
+        List.append(x)
     
     return Response(json.dumps(List), 200, content_type='application/json; charset=utf-8')
     
@@ -236,8 +257,13 @@ def upload_file(environ, request):
     
     while True:
         _id = genId(8)
+        if obj.filename.find(u'\x00') > 0:
+            filename = obj.filename[:-1]
+        else:
+            filename = obj.filename
+        
         try:
-            fs.put(obj, _id=_id ,filename=obj.filename.replace('\u0000', ''),
+            fs.put(obj, _id=_id ,filename=filename.replace(r'\x00', ''),
                    upload_date=timestamp, content_type=obj.mimetype,
                    account=account)
             break
