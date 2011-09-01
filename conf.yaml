@@ -1,0 +1,8 @@
+# conf.yaml for Regenwolken
+
+hostname: localhost
+bind_address: 0.0.0.0
+port: 80
+
+mongodb_host: 127.0.0.1
+mongodb_port: 27017
