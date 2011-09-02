@@ -15,13 +15,49 @@ sys.setdefaultencoding('utf-8')
 from werkzeug.wrappers import Request, Response
 from werkzeug.routing import Map, Rule, Submount
 from werkzeug.wsgi import responder
+from werkzeug.http import parse_dict_header
+from werkzeug.datastructures import Authorization
+from werkzeug.utils import cached_property
 
-# inits global variables HOSTNAME, PORT and so on #FIXME!!
 from wolken import SETTINGS, REST, web
 
-class LimitedRequest(Request):
+
+def parse_authorization_header(value):
+    """make nc and cnonce optional, see https://github.com/mitsuhiko/werkzeug/pull/100"""
+    if not value:
+        return
+    try:
+        auth_type, auth_info = value.split(None, 1)
+        auth_type = auth_type.lower()
+    except ValueError:
+        return
+    if auth_type == 'basic':
+        try:
+            username, password = auth_info.decode('base64').split(':', 1)
+        except Exception, e:
+            return
+        return Authorization('basic', {'username': username,
+                                       'password': password})
+    elif auth_type == 'digest':
+        auth_map = parse_dict_header(auth_info)
+        for key in 'username', 'realm', 'nonce', 'uri', 'response':
+            if not key in auth_map:
+                return
+        if 'qop' in auth_map:
+            if not auth_map.get('nc') or not auth_map.get('cnonce'):
+                return
+        return Authorization('digest', auth_map)
+
+class Wolkenrequest(Request):
+    """fixing HTTP Digest Auth fallback"""
     # FIXME: Cloud.app can not handle 413 Request Entity Too Large
     max_content_length = 1024 * 1024 * 64 # max. 64 mb request size
+    
+    @cached_property
+    def authorization(self):
+        """The `Authorization` object in parsed form."""
+        header = self.environ.get('HTTP_AUTHORIZATION')
+        return parse_authorization_header(header)
 
 HTML_map = Map([
     Rule('/', endpoint=web.index),
@@ -46,7 +82,7 @@ REST_map = Map([
 @responder
 def application(environ, start_response):
     
-    request = LimitedRequest(environ)
+    request = Wolkenrequest(environ)
     
     if request.headers.get('Accept', 'application/json') == 'application/json':
         urls = REST_map.bind_to_environ(environ)
