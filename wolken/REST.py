@@ -160,27 +160,22 @@ def login(f):
 
 @login
 def account(environ, request):
-    """returns account details, see Account for furhter details."""
+    """returns account details, see Account for furhter details.  Also see
+    http://developer.getcloudapp.com/view-account-details"""
     
-    rnd_time = gmtime(time() - 1000*random())
-    ts = strftime('%Y-%m-%dT%H:%M:%SZ', rnd_time)
-    d = { "created_at": ts, "activated_at": ts,
-          "subscription_expires_at": None,
-          "updated_at": ts, "subscribed": False,
-          "domain": SETTINGS.HOSTNAME, "id": 12345,
-          "private_items": True,
-          "domain_home_page": None,
-          "email": "info@example.org",
-          "alpha": False,
-          "items": []
-         }
+    email = request.authorization.username
+    acc = db.accounts.find({'email': email})[0]
+    acc['id'] = int(str(acc['_id']), 16)
+    acc['subscribed'] = True
+    acc['subscription_expires_at'] = '2012-12-21T00:00:00Z'
     
-    return Response(json.dumps(d), 200, content_type='application/json; charset=utf-8')
+    del acc['_id']; del acc['items']
+    return Response(json.dumps(acc), 200, content_type='application/json; charset=utf-8')
 
 
 @login
 def account_stats(environ, request):
-
+    
     d = {'items': 42, 'views': 1337}
     return Response(json.dumps(d), 200)
     
@@ -313,7 +308,8 @@ def bookmarks(environ, request):
  
 
 def register(environ, request):
-    """Allows (instant) registration of new users."""
+    """Allows (instant) registration of new users.  Invokes Account() and
+    is saved directly into database."""
     
     if len(request.data) > 200:
         return Response('Request Entity Too Large', 413)
