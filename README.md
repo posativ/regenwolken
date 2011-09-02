@@ -21,15 +21,13 @@ To work as an alternative CloudApp-server, you have to edit their DNS *my.cl.ly*
 to your own IP in /etc/hosts. This will not interfere with CloudApp itself,
 because they're using *cl.ly* for sharing.
 
-    python regenwolken.py --help
-    Usage: regenwolken.py [options] [Hostname]
+    > cat conf.yaml
+    hostname: my.cloud.org
+    bind_address: 0.0.0.0
+    port: 80 # 9000
 
-    Options:
-      --bind=IP        binding address, e.g. localhost [default: 0.0.0.0]
-      --port=PORT      port, e.g. 80 [default: 9000]
-      --mdb-host=HOST  mongoDB host [default: localhost]
-      --mdb-port=PORT  mongoDB port [default: 27017]
-      -h, --help       show this help message and exit
+    mongodb_host: 127.0.0.1
+    mongodb_port: 2701
 
 ### Setup
 
@@ -47,7 +45,7 @@ with the desired IP):
 #### as HTTP server
 
 - check, there is no other process on port 80
-- run `python wolken.py my.cloud.org` as root
+- run `python regenwolken.py` as root
 - finally launch Cloud.app, register and then log in
 
 - start MongoDB via `mongod --dbpath path/to/some/folder`
@@ -55,8 +53,6 @@ with the desired IP):
 - edit /etc/hosts to
 - finally launch Cloud.app, register and then log in
 - take a test screenshot
-
-Warning: I'm happy, Cloud.app works therefore, I don't take much effort to secure regenwolken.py
 
 #### using lighttpd and mod_proxy
 
@@ -75,7 +71,7 @@ your /etc/lighttpd/lighttpd.conf to something like this:
 
 
 - start MongoDB via `mongod --dbpath path/to/some/folder`
-- run `python wolken.py my.cloud.org` as non-privileged user
+- run `python regenwolken.py` as non-privileged user
 - finally launch Cloud.app, register and log in
 - take a test screenshot
 
@@ -83,21 +79,22 @@ You might wonder, why we ask for "my.cloud.org|my.cl.ly". Your /eth/hosts
 will resolve my.cl.ly to your server IP and requesting with the *Host* my.cl.ly,
 but it returns an URL pointing to your (real) server/domain.
 
-Note: you should invoke the script with a hostname (=domain name), where you
-are hosting Regenwolken. This will return into customized URLs, pointing
-directly to the ressource.
+Note: you should set a *hostname* (=domain name) in conf.yaml, where you host
+Regenwolken. This will return into customized URLs, pointing directly to the
+ressource.
 
 ### Implementation
 
 Regenwolken currently provides only a small subset (but enough to get
 Cloud.app working) of [CloudApp's API](http://developer.getcloudapp.com/).
 
-    /           - POST data
-    /account    - basic account info
-    /items      - browse uploads
-    /items/new  - preparing new upload
-    /items/hash - return data
-    /register   - register new account (currently instantly activated)
+    /              - POST data
+    /account       - basic account info
+    /account/stats - overall file count and views
+    /items         - browse uploads
+    /items/new     - preparing new upload
+    /items/<hash>  - return data
+    /register      - register new account (currently instantly activated)
 
 
 ### Issues
