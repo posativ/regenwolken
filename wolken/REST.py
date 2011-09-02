@@ -176,6 +176,13 @@ def account(environ, request):
          }
     
     return Response(json.dumps(d), 200, content_type='application/json; charset=utf-8')
+
+
+@login
+def account_stats(environ, request):
+
+    d = {'items': 42, 'views': 1337}
+    return Response(json.dumps(d), 200)
     
 
 @login
@@ -201,6 +208,7 @@ def items(environ, request):
     ParseResult = urlparse(request.url)
     if ParseResult.query == '':
         params = {'per_page': '5', 'page': '1'}
+        # TODO: use params.get()
     else:
         params = dict([part.split('=', 1) for part in ParseResult.query.split('&')])
     
@@ -329,9 +337,3 @@ def register(environ, request):
     
     acc['id'] = db.accounts.count()+1; del acc['_id'] # JSONEncoder can't handle ObjectId
     return Response(json.dumps(acc), 201)
-    
-@login
-def account_stats(environ, request):
-
-    d = {'items': 42, 'views': 1337}
-    return Response(json.dumps(d), 200)
