@@ -167,7 +167,7 @@ def account(environ, request):
     acc = db.accounts.find({'email': email})[0]
     acc['id'] = int(str(acc['_id']), 16)
     acc['subscribed'] = True
-    acc['subscription_expires_at'] = '2012-12-21T00:00:00Z'
+    acc['subscription_expires_at'] = '2012-12-21'
     
     del acc['_id']; del acc['items']
     return Response(json.dumps(acc), 200, content_type='application/json; charset=utf-8')
