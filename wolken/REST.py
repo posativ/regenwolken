@@ -140,7 +140,7 @@ def login(f):
                 passwd = '%x' % getrandbits(256)
             return md5(auth.username + ':' + auth.realm + ':' + passwd)
         
-        if str(auth.qop) == 'auth':
+        if str(auth.get('qop', '')) == 'auth':
             A2 = ':'.join([auth.nonce, auth.nc, auth.cnonce, 'auth', md5('GET:' + auth.uri)])
             return md5(A1(auth) + ':' + A2)
         else:
