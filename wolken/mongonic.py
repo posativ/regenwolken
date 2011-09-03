@@ -37,8 +37,10 @@ class GridFS:
         if _id:
             obj = self.gfs.get(_id)
         else:
-            _id = self.mdb.find_one({'url': url})['_id']
-            obj = self.gfs.get(_id)
+            cur = self.mdb.find_one({'url': url})
+            if not cur:
+                raise gridfs.errors.NoFile
+            obj = self.gfs.get(_id['_id'])
         
         cur = self.mdb.find_one({'_id': _id})
         if cur:
