@@ -11,7 +11,7 @@ __version__ = "0.1.2-alpha"
 
 from random import getrandbits, choice, randint
 from urlparse import urlparse
-from time import strftime
+from time import strftime, gmtime
 from datetime import datetime
 import hashlib
 import string
@@ -55,9 +55,9 @@ def Item(_id, name, short, **kw):
         thumbnail_url:  <url to thumbnail, when used?>
         redirect_url:   <unknown>
         source:         client referrer
-        created_at:     timestamp created – '%Y-%m-%dT%H:%M:%SZ'
-        updated_at:     timestamp updated – '%Y-%m-%dT%H:%M:%SZ'
-        deleted_at:     timestamp deleted – '%Y-%m-%dT%H:%M:%SZ'
+        created_at:     timestamp created – '%Y-%m-%dT%H:%M:%SZ' UTC
+        updated_at:     timestamp updated – '%Y-%m-%dT%H:%M:%SZ' UTC
+        deleted_at:     timestamp deleted – '%Y-%m-%dT%H:%M:%SZ' UTC
     """
         
     __dict__ = {
@@ -90,8 +90,8 @@ def Account(email, passwd, **kw):
         private_items:    <unknown>
         subscribed:       Pro feature, custom domain... we don't need this.
         alpha:            <unkown> wtf?
-        created_at:       timestamp created – '%Y-%m-%dT%H:%M:%SZ'
-        updated_at:       timestamp updated – '%Y-%m-%dT%H:%M:%SZ'
+        created_at:       timestamp created – '%Y-%m-%dT%H:%M:%SZ' UTC
+        updated_at:       timestamp updated – '%Y-%m-%dT%H:%M:%SZ' UTC
         activated_at:     timestamp account activated, per default None
         items:            (not official) list of items by this account
         email:            username of this account, characters can be any
@@ -105,8 +105,8 @@ def Account(email, passwd, **kw):
         'private_items': True,
         'subscribed': False,
         'alpha': False,
-        'created_at': strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'created_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
+        'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         'activated_at': None,
         "items": [],
         'email': email,
@@ -231,9 +231,9 @@ def items(environ, request):
     for item in items[ipp*(page-1):ipp*page]:
         obj = fs.get(item)
         item_type = obj.content_type.split('/', 1)[0]
-        ts = obj.upload_date.strftime('%Y-%m-%dT%H:%M:%SZ')
-        x = Item(name=obj.filename, _id=item, short=obj.url, created_at=ts,
-                 updated_at=ts, view_counter=obj.view_counter, item_type=item_type)
+        x = Item(name=obj.filename, _id=item, short=obj.url,
+                 created_at=obj.created_at, updated_at=obj.updated_at,
+                 view_counter=obj.view_counter, item_type=item_type)
         List.append(x)
     
     return Response(json.dumps(List), 200, content_type='application/json; charset=utf-8')
@@ -260,7 +260,7 @@ def upload_file(environ, request):
         return Response('Unauthorized.', 403)
     
     account = sessions.get(request.form.get('key'))['account']
-    timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+    timestamp = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
     obj = request.files.get('file')
     if not obj:
         return Response('Bad Request.', 400)
@@ -305,7 +305,7 @@ def view_item(environ, request, short):
         f = fs.get(url=short)
     except NoFile:
         return Response('File not found!', 404)
-        
+    
     i = Item(_id=f._id, name=f.filename, short=f.url,
              item_type=f.content_type, created_at=f.created_at,
              updated_at=f.updated_at, view_counter=f.view_counter)
@@ -334,7 +334,7 @@ def bookmark(environ, request):
         data = json.loads(request.data)
         data = data['item']
     except (ValueError, KeyError):
-        return Response('Bad Request.', 400)
+        return Response('Unprocessable Entity.', 422)
         
     if isinstance(data, list):
         L = [insert(d['name'], d['redirect_url']) for d in data]
@@ -365,7 +365,8 @@ def register(environ, request):
     if db.accounts.find({'email': email}).count() > 0:
         return Response('Not Acceptable.', 406)
     
-    acc = Account(email=email, passwd=passwd, activated_at=strftime('%Y-%m-%dT%H:%M:%SZ'))
+    acc = Account(email=email, passwd=passwd,
+                  activated_at=strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()))
     db.accounts.insert(acc)
     
     acc['id'] = db.accounts.count()+1; del acc['_id'] # JSONEncoder can't handle ObjectId
