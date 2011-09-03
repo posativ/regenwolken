@@ -20,10 +20,10 @@ class GridFS:
         self.mdb = database['%s_metadata' % collection]
         self.gfs = gridfs.GridFS(database, collection)
         
-    def put(self, data, _id, content_type, filename, upload_date, **kw):
+    def put(self, data, _id, content_type, filename, **kw):
         
         _id = self.gfs.put(data, _id=_id, content_type=content_type,
-                           filename=filename, upload_date=upload_date)
+                           filename=filename)
         if kw:
             kw.update({'_id': _id})
             self.mdb.insert(kw)
@@ -36,16 +36,14 @@ class GridFS:
         
         if _id:
             obj = self.gfs.get(_id)
+            cur = self.mdb.find_one({'_id': _id})
         else:
             cur = self.mdb.find_one({'url': url})
             if not cur:
                 raise gridfs.errors.NoFile
-            obj = self.gfs.get(_id['_id'])
-        
-        cur = self.mdb.find_one({'_id': _id})
-        if cur:
-            obj.__dict__.update(cur)
+            obj = self.gfs.get(cur['_id'])
             
+        obj.__dict__.update(cur)
         return obj
             
     def update(self, _id, **kw):

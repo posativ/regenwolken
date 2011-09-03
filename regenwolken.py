@@ -12,8 +12,8 @@ __version__ = "0.1.2-alpha"
 import sys; reload(sys)
 sys.setdefaultencoding('utf-8')
 
-from werkzeug.wrappers import Request, Response
-from werkzeug.routing import Map, Rule, Submount
+from werkzeug.wrappers import Request
+from werkzeug.routing import Map, Rule
 from werkzeug.wsgi import responder
 from werkzeug.http import parse_dict_header
 from werkzeug.datastructures import Authorization
@@ -34,7 +34,7 @@ def parse_authorization_header(value):
     if auth_type == 'basic':
         try:
             username, password = auth_info.decode('base64').split(':', 1)
-        except Exception, e:
+        except Exception:
             return
         return Authorization('basic', {'username': username,
                                        'password': password})
@@ -61,6 +61,7 @@ class Wolkenrequest(Request):
 
 HTML_map = Map([
     Rule('/', endpoint=web.index),
+    Rule('/<short>', endpoint=web.show),
 #    Rule('/account', endpoint='web.account'),
  #   Submount('/items', [
  #       Rule('/', endpoint='web.items.index'),
@@ -69,13 +70,14 @@ HTML_map = Map([
 
 REST_map = Map([
     Rule('/', endpoint=REST.upload_file, methods=['POST', ]),
+    Rule('/items', endpoint=REST.bookmarks, methods=['POST', ]),
+    Rule('/register', endpoint=REST.register, methods=['POST', ]),
+    Rule('/<short>', endpoint=REST.view_item, methods=['GET', ]),
     Rule('/account', endpoint=REST.account),
     Rule('/account/stats', endpoint=REST.account_stats),
     Rule('/items', endpoint=REST.items),
-    Rule('/items', endpoint=REST.bookmarks, methods=['POST', ]),
     Rule('/items/new', endpoint=REST.items_new),
-    Rule('/items/<id>', endpoint=REST.show),
-    Rule('/register', endpoint=REST.register, methods=['POST', ]),
+#    Rule('/items/<short>', endpoint=REST.view_item)
 ])
 
 
@@ -87,8 +89,8 @@ def application(environ, start_response):
     if request.headers.get('Accept', 'application/json') == 'application/json':
         urls = REST_map.bind_to_environ(environ)
     else:
-        urls = REST_map.bind_to_environ(environ)
-        # urls = HTML_map.bind_to_environ(environ)
+        #urls = REST_map.bind_to_environ(environ)
+        urls = HTML_map.bind_to_environ(environ)
 
     return urls.dispatch(lambda f, v: f(environ, request, **v),
                          catch_http_exceptions=True)

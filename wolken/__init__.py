@@ -14,7 +14,13 @@ from uuid import uuid4
 import random
 import json
 import hashlib
+import string
 
+try:
+    import gridfs
+except ImportError:
+    print >> sys.stderr, 'pymongo not installed... exiting.'
+    sys.exit(1)
 
 class Config():
     """stores conf.yaml"""
@@ -51,7 +57,7 @@ class File(file):
         self.__dict__.update(entries)
 
 
-class Grid:
+class LocalFS:
     '''Abstraction layer to save files in filesystem instead of GridFS.
     
     It stores every file as truncated md5 hash (8 characters long) to
@@ -175,3 +181,49 @@ class Sessions:
                 'account': account})
         
         return session_id
+
+# 
+# class Grid:
+#     '''A more usable GridFS with LocalFS fallback'''
+#     
+#     def __init__(self, db):
+#         
+#         if SETTINGS.BACKEND.lower() == 'mongodb':
+#             
+#             self.mdb = db
+#             self.gfs = gridfs.GridFS(db)
+#             self.type = 'mongodb'
+#         
+#         else:
+#             pass
+#             
+#     def put(self, obj, filename, content_type, account, **kw):
+#         '''save obj and filename to GridFS or LocalFS and all additional
+#         arguments read/writable for further modificatons. Returns id.'''
+#         
+#         def genId(length=8, charset=string.ascii_lowercase+string.digits):
+#             """generates a pseudorandom string of a-z0-9 of given length"""
+#             return ''.join([choice(charset) for x in xrange(length)])
+#         
+#         if self.type == 'mongodb':
+# 
+#             file_id = self.gfs.put(obj, filename, content_type=content_type,
+#                                    account=account)
+#         
+#             items = self.mdb.items
+#             items.insert()
+#         
+#             fs.put(obj, _id=_id ,filename=filename.replace(r'\x00', ''),
+#                        upload_date=timestamp, content_type=obj.mimetype,
+#                        account=account)
+#                        
+#     def get(self, short):
+#         '''returns file belonging to http://domain.tld/<short>'''
+#         pass
+#         
+#     def details(self, _id):
+#         '''returns '''
+#         pass
+#         
+#         
+#         

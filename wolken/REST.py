@@ -170,6 +170,7 @@ def account(environ, request):
     acc['id'] = int(str(acc['_id']), 16)
     acc['subscribed'] = True
     acc['subscription_expires_at'] = '2012-12-21'
+    acc['domain'] = HOSTNAME
     
     del acc['_id']; del acc['items']
     return Response(json.dumps(acc), 200, content_type='application/json; charset=utf-8')
@@ -228,8 +229,9 @@ def items(environ, request):
         obj = fs.get(item)
         item_type = obj.content_type.split('/', 1)[0]
         ts = obj.upload_date.strftime('%Y-%m-%dT%H:%M:%SZ')
-        x = Item(filename=obj.filename, _id=item, created_at=ts,
-                 updated_at=ts, view_counter=0, item_type=item_type)
+        x = Item(filename=obj.filename, _id=item, short=obj.url,
+                 created_at=ts, updated_at=ts, view_counter=obj.view_counter,
+                 item_type=item_type)
         List.append(x)
     
     return Response(json.dumps(List), 200, content_type='application/json; charset=utf-8')
@@ -275,8 +277,9 @@ def upload_file(environ, request):
         
         try:
             fs.put(obj, _id=_id ,filename=filename.replace(r'\x00', ''),
-                   upload_date=timestamp, content_type=obj.mimetype,
-                   account=account, view_counter=0, url=gen(randint(3,8)))
+                   created_at=timestamp, content_type=obj.mimetype,
+                   account=account, view_counter=0, url=gen(randint(3,8)),
+                   updated_at=timestamp)
             break
         except DuplicateKeyError:
             pass
@@ -296,20 +299,21 @@ def upload_file(environ, request):
     return Response(json.dumps(new), content_type='application/json')
 
 
-def show(environ, request, short):
-    """returns file either as direct download with human-readable, original
-    filename or inline display using whitelisting"""
+def view_item(environ, request, short):
+    '''Implements: View Item.  http://developer.getcloudapp.com/view-item.
+    Only via `Accept: application/json` accessible, returns 404 Not Found, if
+    URL does not exist.'''
     
     try:
         f = fs.get(url=short)
-        cnt = f.view_counter
-        fs.update(f._id, view_counter=cnt+1)
     except NoFile:
         return Response('File not found!', 404)
-    if not f.content_type.split('/', 1)[0] in ['image', 'text']:
-        return Response(f, content_type=f.content_type, headers={'Content-Disposition':
-                    'attachment; filename="%s"' % basename(f.filename)})
-    return Response(f, content_type=f.content_type)
+        
+    i = Item(_id=f._id, filename=f.filename, short=f.url,
+             item_type=f.content_type, created_at=f.created_at,
+             updated_at=f.updated_at, view_counter=f.view_counter)
+             
+    return Response(json.dumps(i), 200)
 
 
 def bookmarks(environ, request):
@@ -342,7 +346,3 @@ def register(environ, request):
     
     acc['id'] = db.accounts.count()+1; del acc['_id'] # JSONEncoder can't handle ObjectId
     return Response(json.dumps(acc), 201)
-
-def view_item(environ, request):
-    
-    return Response('', 200)
