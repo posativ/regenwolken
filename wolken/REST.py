@@ -39,6 +39,13 @@ fs = GridFS(db)
 HOSTNAME = SETTINGS.HOSTNAME
 
 
+class Struct:
+    """dict -> class, http://stackoverflow.com/questions/1305532/convert-python-dict-to-object"""
+    def __init__(self, **entries): 
+        self.__dict__.update(entries)
+
+
+
 def Item(_id, name, short, **kw):
     """JSON-compatible dict representing Item.  
     
@@ -229,11 +236,20 @@ def items(environ, request):
     # TODO: filter by type and deleted
     items = db.accounts.find({'email': email})[0]['items'][::-1]
     for item in items[ipp*(page-1):ipp*page]:
-        obj = fs.get(item)
-        item_type = obj.content_type.split('/', 1)[0]
-        x = Item(name=obj.filename, _id=item, short=obj.url,
-                 created_at=obj.created_at, updated_at=obj.updated_at,
-                 view_counter=obj.view_counter, item_type=item_type)
+        cur = db.items.find_one({'_id': item})
+
+        
+        if cur['item_type'] == 'bookmark':
+            cur = Struct(**cur)
+            x = Item(name=cur.name, _id=item, short=cur.url,
+                 created_at=cur.created_at, updated_at=cur.updated_at,
+                 view_counter=cur.view_counter, item_type=cur.item_type)
+        else:
+            obj = fs.get(item)
+            item_type = obj.content_type.split('/', 1)[0]
+            x = Item(name=obj.filename, _id=item, short=obj.url,
+                     created_at=obj.created_at, updated_at=obj.updated_at,
+                     view_counter=obj.view_counter, item_type=item_type)
         List.append(x)
     
     return Response(json.dumps(List), 200, content_type='application/json; charset=utf-8')
@@ -317,12 +333,17 @@ def bookmark(environ, request):
     
     def insert(name, redirect_url):
         
-        _id = gen(randint(3,12), charset=string.digits)
+        _id = gen(12, charset=string.digits)
         short = '-' + gen(randint(3,6))
         item = Item(_id=_id, name=name, short=short, redirect_url=redirect_url)
         item['name'] = name
         item['content_url'] = item['url']
         item['remote_url'] = None
+        
+        acc = db.accounts.find_one({'email': request.authorization.username})
+        items = acc['items']
+        items.append(_id)
+        db.accounts.update({'_id': acc['_id']}, {'$set': {'items': items}}, upsert=False)
         
         item['_id'] = _id
         db.items.insert(item)
