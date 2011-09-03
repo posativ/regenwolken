@@ -7,7 +7,7 @@ able to authenticate via HTTP Digest Authentication specified in [RCF2617][1].
 
 [1]: https://tools.ietf.org/html/rfc2617
 
-REST-API Features:
+Features:
 
     - Redirects: yes, wherever you want
     - Cookies: yes, but not transmitted to different URLs on the same host -> senseless
@@ -21,6 +21,7 @@ Bugs:
       the filename. Server-side seems to fix it.  Would break e.g. `cloudapp_api`
     - /register: HTTP 201 -> success, but there is no way, to indicate, what
       could be wrong with the current username (exists e.g.)
+    - Cloud.app can not handle 413 Request Entity Too Large
       
       
 ## cloudapp_api (Ruby wrapper)
