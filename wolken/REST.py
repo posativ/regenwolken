@@ -10,7 +10,7 @@
 __version__ = "0.1.2-alpha"
 
 from functools import wraps
-from random import random, getrandbits, choice
+from random import random, getrandbits, choice, randint
 from urlparse import urlparse
 from os.path import basename
 from time import strftime, time, gmtime
@@ -28,19 +28,21 @@ from wolken import Sessions, SETTINGS
 
 from pymongo import Connection
 from pymongo.errors import DuplicateKeyError
-import gridfs
 from gridfs.errors import NoFile
 from bson.objectid import ObjectId
 
 sessions = Sessions(timeout=3600)
 
 db = Connection(SETTINGS.MONGODB_HOST, SETTINGS.MONGODB_PORT)['cloudapp']
-fs = gridfs.GridFS(db)
+
+from wolken.mongonic import GridFS
+fs = GridFS(db)
 #fs = wolken.Grid('fsdb')
 
 HOSTNAME = SETTINGS.HOSTNAME
 
-def Item(filename, _id, **kw):
+
+def Item(_id, filename, short, **kw):
     """JSON-compatible dict representing Item.  
     
         href:           used for renaming -> http://developer.getcloudapp.com/rename-item
@@ -58,7 +60,7 @@ def Item(filename, _id, **kw):
         source:         client referrer
         created_at:     timestamp created – '%Y-%m-%dT%H:%M:%SZ'
         updated_at:     timestamp updated – '%Y-%m-%dT%H:%M:%SZ'
-        updated_at:     timestamp deleted – '%Y-%m-%dT%H:%M:%SZ'
+        deleted_at:     timestamp deleted – '%Y-%m-%dT%H:%M:%SZ'
     """
         
     __dict__ = {
@@ -66,13 +68,13 @@ def Item(filename, _id, **kw):
         "name": filename,
         "private": True,
         "subscribed": False,
-        "url": "http://%s/items/%s" % (HOSTNAME, _id),
-        "content_url": "http://%s/items/%s" % (HOSTNAME, _id),
+        "url": "http://%s/%s" % (HOSTNAME, short),
+        "content_url": "http://%s/%s/%s" % (HOSTNAME, short, filename),
         "item_type": "bookmark",
         "view_counter": 0,
         "icon": "http://%s/images/item_types/bookmark.png" % HOSTNAME,
-        "remote_url": "http://%s/items/%s" % (HOSTNAME, _id),
-        "redirect_url": "http://%s" % HOSTNAME,
+        "remote_url": "http://%s/%s/%s" % (HOSTNAME, short, filename),
+        "redirect_url": None, #"http://%s" % HOSTNAME,
         "source": "Regenwolken/%s LeaveTheCloud/Now" % __version__,
         "created_at": strftime('%Y-%m-%dT%H:%M:%SZ'),
         "updated_at": strftime('%Y-%m-%dT%H:%M:%SZ'),
@@ -89,7 +91,7 @@ def Account(email, passwd, **kw):
         domain:           <unknown>
         domain_home_page: <unknown>
         private_items:    <unknown>
-        subscribed:       <unkown> pro purchased?
+        subscribed:       Pro feature, custom domain... we don't need this.
         alpha:            <unkown> wtf?
         created_at:       timestamp created – '%Y-%m-%dT%H:%M:%SZ'
         updated_at:       timestamp updated – '%Y-%m-%dT%H:%M:%SZ'
@@ -136,7 +138,7 @@ def login(f):
                 passwd = '%x' % getrandbits(256)
             return md5(auth.username + ':' + auth.realm + ':' + passwd)
         
-        if str(auth.qop) == 'auth':# and auth.nc and auth.cnonce:
+        if str(auth.qop) == 'auth':
             A2 = ':'.join([auth.nonce, auth.nc, auth.cnonce, 'auth', md5('GET:' + auth.uri)])
             return md5(A1(auth) + ':' + A2)
         else:
@@ -176,7 +178,13 @@ def account(environ, request):
 @login
 def account_stats(environ, request):
     
-    d = {'items': 42, 'views': 1337}
+    email = request.authorization.username
+    items = db.accounts.find({'email': email})[0]['items']
+    views = 0
+    for item in items:
+        views += fs.get(item).view_counter
+    
+    d = {'items': len(items), 'views': views}
     return Response(json.dumps(d), 200)
     
 
@@ -245,7 +253,7 @@ def items_new(environ, request):
 def upload_file(environ, request):
     '''upload file, when authorized with `key`'''
     
-    def genId(length=8, charset=string.ascii_lowercase+string.digits):
+    def gen(length=8, charset=string.ascii_lowercase+string.digits):
         """generates a pseudorandom string of a-z0-9 of given length"""
         return ''.join([choice(charset) for x in xrange(length)])
     
@@ -259,7 +267,7 @@ def upload_file(environ, request):
         return Response('Bad Request.', 400)
     
     while True:
-        _id = genId(8)
+        _id = gen(12, charset=string.digits)
         if obj.filename.find(u'\x00') > 0:
             filename = obj.filename[:-1]
         else:
@@ -268,33 +276,34 @@ def upload_file(environ, request):
         try:
             fs.put(obj, _id=_id ,filename=filename.replace(r'\x00', ''),
                    upload_date=timestamp, content_type=obj.mimetype,
-                   account=account)
+                   account=account, view_counter=0, url=gen(randint(3,8)))
             break
         except DuplicateKeyError:
             pass
     
-    query = db.accounts.find({'email': account})[:]
-    acc = query[:][0]
+    acc = db.accounts.find_one({'email': account})
     items = acc['items']
     items.append(_id)
     db.accounts.update({'_id': acc['_id']}, {'$set': {'items': items}}, upsert=False)
     
     obj = fs.get(_id)
-    url = 'http://' + SETTINGS.HOSTNAME + "/items/" + _id
     item_type = obj.content_type.split('/', 1)[0]
     
-    new = Item(filename=obj.filename, _id=_id, created_at=timestamp,
-               updated_at=timestamp, view_counter=0, item_type=item_type)
+    new = Item(filename=obj.filename, _id=_id, short=obj.url,
+               created_at=timestamp, updated_at=timestamp,
+               view_counter=0, item_type=item_type)
          
     return Response(json.dumps(new), content_type='application/json')
 
 
-def show(environ, request, id):
+def show(environ, request, short):
     """returns file either as direct download with human-readable, original
     filename or inline display using whitelisting"""
     
     try:
-        f = fs.get(id)
+        f = fs.get(url=short)
+        cnt = f.view_counter
+        fs.update(f._id, view_counter=cnt+1)
     except NoFile:
         return Response('File not found!', 404)
     if not f.content_type.split('/', 1)[0] in ['image', 'text']:
@@ -333,3 +342,7 @@ def register(environ, request):
     
     acc['id'] = db.accounts.count()+1; del acc['_id'] # JSONEncoder can't handle ObjectId
     return Response(json.dumps(acc), 201)
+
+def view_item(environ, request):
+    
+    return Response('', 200)
