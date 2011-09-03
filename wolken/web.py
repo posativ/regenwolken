@@ -33,3 +33,14 @@ def show(environ, request, short):
         return Response(f, content_type=f.content_type, headers={'Content-Disposition':
                     'attachment; filename="%s"' % basename(f.filename)})
     return Response(f, content_type=f.content_type)
+    
+
+def redirect(environ, request, short):
+    """find short id and redirect to this url"""
+    
+    cur = db.items.find_one({'url': 'http://%s/-%s' % (SETTINGS.HOSTNAME, short)})
+    if not cur:
+        return Response('Not found.', 404)
+        
+    return Response('Moved Permanently', 301,
+                    headers={'Location': cur['redirect_url']})

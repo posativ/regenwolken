@@ -9,11 +9,9 @@
 
 __version__ = "0.1.2-alpha"
 
-from functools import wraps
-from random import random, getrandbits, choice, randint
+from random import getrandbits, choice, randint
 from urlparse import urlparse
-from os.path import basename
-from time import strftime, time, gmtime
+from time import strftime
 from datetime import datetime
 import hashlib
 import string
@@ -23,13 +21,12 @@ try:
 except ImportError:
     import simplejson as json
 
-from werkzeug.wrappers import Request, Response
+from werkzeug.wrappers import Response
 from wolken import Sessions, SETTINGS
 
 from pymongo import Connection
 from pymongo.errors import DuplicateKeyError
 from gridfs.errors import NoFile
-from bson.objectid import ObjectId
 
 sessions = Sessions(timeout=3600)
 
@@ -42,13 +39,13 @@ fs = GridFS(db)
 HOSTNAME = SETTINGS.HOSTNAME
 
 
-def Item(_id, filename, short, **kw):
+def Item(_id, name, short, **kw):
     """JSON-compatible dict representing Item.  
     
         href:           used for renaming -> http://developer.getcloudapp.com/rename-item
         name:           item's name, taken from filename
         private:        returns in longer hash (not needed imho)
-        subscribed:     <unknown>
+        subscribed:     true or false, when paid for “Pro”
         url:            url to this file
         content_url:    <unknown>
         item_type:      image, bookmark, ... there are more
@@ -65,15 +62,15 @@ def Item(_id, filename, short, **kw):
         
     __dict__ = {
         "href": "http://%s/items/%s" % (HOSTNAME, _id),
-        "name": filename,
+        "name": name,
         "private": True,
         "subscribed": False,
         "url": "http://%s/%s" % (HOSTNAME, short),
-        "content_url": "http://%s/%s/%s" % (HOSTNAME, short, filename),
+        "content_url": "http://%s/%s/%s" % (HOSTNAME, short, name),
         "item_type": "bookmark",
         "view_counter": 0,
         "icon": "http://%s/images/item_types/bookmark.png" % HOSTNAME,
-        "remote_url": "http://%s/%s/%s" % (HOSTNAME, short, filename),
+        "remote_url": "http://%s/%s/%s" % (HOSTNAME, short, name),
         "redirect_url": None, #"http://%s" % HOSTNAME,
         "source": "Regenwolken/%s LeaveTheCloud/Now" % __version__,
         "created_at": strftime('%Y-%m-%dT%H:%M:%SZ'),
@@ -88,8 +85,8 @@ def Item(_id, filename, short, **kw):
 def Account(email, passwd, **kw):
     """JSON-compatible dict representing cloudapp's account
     
-        domain:           <unknown>
-        domain_home_page: <unknown>
+        domain:           custom domain, only in Pro available
+        domain_home_page: http://developer.getcloudapp.com/view-domain-details
         private_items:    <unknown>
         subscribed:       Pro feature, custom domain... we don't need this.
         alpha:            <unkown> wtf?
@@ -118,6 +115,11 @@ def Account(email, passwd, **kw):
     
     __dict__.update(kw)
     return __dict__
+    
+
+def gen(length=8, charset=string.ascii_lowercase+string.digits):
+    """generates a pseudorandom string of a-z0-9 of given length"""
+    return ''.join([choice(charset) for x in xrange(length)])
 
 
 def login(f):
@@ -210,11 +212,11 @@ def items(environ, request):
     '''
     
     ParseResult = urlparse(request.url)
-    if ParseResult.query == '':
-        params = {'per_page': '5', 'page': '1'}
-        # TODO: use params.get()
-    else:
-        params = dict([part.split('=', 1) for part in ParseResult.query.split('&')])
+    params = {'per_page': '5', 'page': '1', 'type': 'image', 'deleted': True}
+    
+    if not ParseResult.query == '':
+        query = dict([part.split('=', 1) for part in ParseResult.query.split('&')])
+        params.update(query)
     
     List = []
     try:
@@ -224,14 +226,14 @@ def items(environ, request):
     except (ValueError, KeyError):
         return Response('Bad Request.', 400)
     
+    # TODO: filter by type and deleted
     items = db.accounts.find({'email': email})[0]['items'][::-1]
     for item in items[ipp*(page-1):ipp*page]:
         obj = fs.get(item)
         item_type = obj.content_type.split('/', 1)[0]
         ts = obj.upload_date.strftime('%Y-%m-%dT%H:%M:%SZ')
-        x = Item(filename=obj.filename, _id=item, short=obj.url,
-                 created_at=ts, updated_at=ts, view_counter=obj.view_counter,
-                 item_type=item_type)
+        x = Item(name=obj.filename, _id=item, short=obj.url, created_at=ts,
+                 updated_at=ts, view_counter=obj.view_counter, item_type=item_type)
         List.append(x)
     
     return Response(json.dumps(List), 200, content_type='application/json; charset=utf-8')
@@ -239,10 +241,9 @@ def items(environ, request):
 
 @login
 def items_new(environ, request):
-    '''generates a new key for upload process'''
+    '''generates a new key for upload process.  Timeout after 60 minutes!'''
     
     id = sessions.new(request.authorization.username)
-    
     d = { "url": "http://my.cl.ly",
           "params": { "acl":"public-read",
                       "key": id
@@ -254,10 +255,6 @@ def items_new(environ, request):
 
 def upload_file(environ, request):
     '''upload file, when authorized with `key`'''
-    
-    def gen(length=8, charset=string.ascii_lowercase+string.digits):
-        """generates a pseudorandom string of a-z0-9 of given length"""
-        return ''.join([choice(charset) for x in xrange(length)])
     
     if not request.form.get('key') in sessions:
         return Response('Unauthorized.', 403)
@@ -292,7 +289,7 @@ def upload_file(environ, request):
     obj = fs.get(_id)
     item_type = obj.content_type.split('/', 1)[0]
     
-    new = Item(filename=obj.filename, _id=_id, short=obj.url,
+    new = Item(name=obj.filename, _id=_id, short=obj.url,
                created_at=timestamp, updated_at=timestamp,
                view_counter=0, item_type=item_type)
          
@@ -309,16 +306,43 @@ def view_item(environ, request, short):
     except NoFile:
         return Response('File not found!', 404)
         
-    i = Item(_id=f._id, filename=f.filename, short=f.url,
+    i = Item(_id=f._id, name=f.filename, short=f.url,
              item_type=f.content_type, created_at=f.created_at,
              updated_at=f.updated_at, view_counter=f.view_counter)
              
     return Response(json.dumps(i), 200)
 
 
-def bookmarks(environ, request):
-    raise NotImplementedError
- 
+def bookmark(environ, request):
+    
+    def insert(name, redirect_url):
+        
+        _id = gen(randint(3,12), charset=string.digits)
+        short = '-' + gen(randint(3,6))
+        item = Item(_id=_id, name=name, short=short, redirect_url=redirect_url)
+        item['name'] = name
+        item['content_url'] = item['url']
+        item['remote_url'] = None
+        
+        item['_id'] = _id
+        db.items.insert(item)
+        
+        del item['_id']
+        return item
+    
+    try:
+        data = json.loads(request.data)
+        data = data['item']
+    except (ValueError, KeyError):
+        return Response('Bad Request.', 400)
+        
+    if isinstance(data, list):
+        L = [insert(d['name'], d['redirect_url']) for d in data]
+        return Response(json.dumps(L), 200)
+    else:
+        I = insert(data['name'], data['redirect_url'])
+        return Response(json.dumps(I), 200)
+
 
 def register(environ, request):
     """Allows (instant) registration of new users.  Invokes Account() and

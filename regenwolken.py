@@ -61,6 +61,7 @@ class Wolkenrequest(Request):
 
 HTML_map = Map([
     Rule('/', endpoint=web.index),
+    Rule('/-<short>', endpoint=web.redirect),
     Rule('/<short>', endpoint=web.show),
 #    Rule('/account', endpoint='web.account'),
  #   Submount('/items', [
@@ -70,7 +71,7 @@ HTML_map = Map([
 
 REST_map = Map([
     Rule('/', endpoint=REST.upload_file, methods=['POST', ]),
-    Rule('/items', endpoint=REST.bookmarks, methods=['POST', ]),
+    Rule('/items', endpoint=REST.bookmark, methods=['POST', ]),
     Rule('/register', endpoint=REST.register, methods=['POST', ]),
     Rule('/<short>', endpoint=REST.view_item, methods=['GET', ]),
     Rule('/account', endpoint=REST.account),

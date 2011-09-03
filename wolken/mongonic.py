@@ -17,7 +17,7 @@ class GridFS:
     
     def __init__(self, database, collection='fs'):
         
-        self.mdb = database['%s_metadata' % collection]
+        self.mdb = database.items
         self.gfs = gridfs.GridFS(database, collection)
         
     def put(self, data, _id, content_type, filename, **kw):
