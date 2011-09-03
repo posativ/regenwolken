@@ -4,6 +4,7 @@
 # Copyright 2011 posativ <info@posativ.org>. All rights reserved.
 # License: BSD Style, 2 clauses.
 
+from wolken import Struct
 import gridfs
 
 class GridFS:
@@ -39,7 +40,6 @@ class GridFS:
         a GridOut with additional metadata added.'''
 
         if _id:
-            # obj = self.gfs.get(_id)
             cur = self.mdb.find_one({'_id': _id})
         else:
             cur = self.mdb.find_one({'url': url})

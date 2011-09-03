@@ -22,7 +22,7 @@ except ImportError:
     import simplejson as json
 
 from werkzeug.wrappers import Response
-from wolken import Sessions, SETTINGS
+from wolken import Sessions, SETTINGS, Struct
 
 from pymongo import Connection
 from pymongo.errors import DuplicateKeyError
@@ -37,13 +37,6 @@ fs = GridFS(db)
 #fs = wolken.Grid('fsdb')
 
 HOSTNAME = SETTINGS.HOSTNAME
-
-
-class Struct:
-    """dict -> class, http://stackoverflow.com/questions/1305532/convert-python-dict-to-object"""
-    def __init__(self, **entries): 
-        self.__dict__.update(entries)
-
 
 
 def Item(_id, name, short, **kw):
@@ -317,14 +310,23 @@ def view_item(environ, request, short):
     Only via `Accept: application/json` accessible, returns 404 Not Found, if
     URL does not exist.'''
     
-    try:
-        f = fs.get(url=short)
-    except NoFile:
-        return Response('File not found!', 404)
+    if short.startswith('-'):
+        cur = db.items.find_one({'url': 'http://%s/%s' % (HOSTNAME, short)})
+        if not cur:
+            return Response('Item not found!', 404)
+        cur = Struct(**cur)
+        i = Item(_id=cur._id, name=cur.name, short=cur.url,
+             item_type=cur.item_type, created_at=cur.created_at,
+             updated_at=cur.updated_at, view_counter=cur.view_counter)
+    else:
+        try:
+            f = fs.get(url=short)
+        except NoFile:
+            return Response('File not found!', 404)
     
-    i = Item(_id=f._id, name=f.filename, short=f.url,
-             item_type=f.content_type, created_at=f.created_at,
-             updated_at=f.updated_at, view_counter=f.view_counter)
+        i = Item(_id=f._id, name=f.filename, short=f.url,
+                 item_type=f.content_type, created_at=f.created_at,
+                 updated_at=f.updated_at, view_counter=f.view_counter)
              
     return Response(json.dumps(i), 200)
 
@@ -346,6 +348,7 @@ def bookmark(environ, request):
         db.accounts.update({'_id': acc['_id']}, {'$set': {'items': items}}, upsert=False)
         
         item['_id'] = _id
+        print item
         db.items.insert(item)
         
         del item['_id']
