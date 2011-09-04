@@ -107,6 +107,18 @@ calls of [CloudApp's API](http://developer.getcloudapp.com/) missing.
     /<short_id>    - GET file
     /-<short_id>   - GET redirect from bookmark
     
+#### status codes
+
+    200 Ok           - everything fine
+    201 Ok           - register was successfully
+    301 Redirect     - redirect instantly to new URL
+    400 Bad Request  - wrong json
+    401 Unauthorized - requires authentication
+    403 Unauthorized - authentication failure
+    404 Not Found    - short_id/_id is not found
+    406 User already exists - when /register-ing an alreay existing user
+    413 Request Entity Too Large - our size limit is 64 MiB
+    
 ### tested clients
 
 - Mac OS X [Cloud](http://itunes.apple.com/us/app/cloud/id417602904?mt=12&ls=1)
