@@ -24,7 +24,7 @@ because they're using *cl.ly* for sharing.
     > cat conf.yaml
     hostname: my.cloud.org
     bind_address: 0.0.0.0
-    port: 80 # 9000
+    port: 80 # or 9000 for mod_proxy
 
     mongodb_host: 127.0.0.1
     mongodb_port: 2701
@@ -83,23 +83,35 @@ Note: you should set a *hostname* (=domain name) in conf.yaml, where you host
 Regenwolken. This will return into customized URLs, pointing directly to the
 ressource.
 
-### Implementation
+### API implementation
 
-Regenwolken currently provides only a small subset (but enough to get
-Cloud.app working) of [CloudApp's API](http://developer.getcloudapp.com/).
+Regenwolken provides all API calls to get Cloud.app working and has only few
+calls of [CloudApp's API](http://developer.getcloudapp.com/) missing.
 
-    /              - POST data
-    /account       - basic account info
-    /account/stats - overall file count and views
-    /items         - browse uploads
-    /items/new     - preparing new upload
-    /items/<hash>  - return data
-    /register      - register new account (currently instantly activated)
+    # -H "Accept: application/json"
 
+    /              - POST files
+    /items         - POST (multiple) bookmarks
+    /register      - POST register (instantly) new account
+    /<short_id>    - GET item details
+    /account       - GET account info
+    /account/stats - GET overall file count and views
+    /items         - GET list of uploaded items
+    /items/new     - GET key for new upload
+    
+    # -H "Accept: text/html"
+    
+    /              - GET "Hallo Welt!"
+    /<short_id>    - GET file
+    /-<short_id>   - GET redirect from bookmark
+    
+### tested clients
 
-### Issues
-
-- [ruby's cloudapp wrapper can't authenticate](https://github.com/posativ/regenwolken/issues/8)
+- Mac OS X [Cloud](http://itunes.apple.com/us/app/cloud/id417602904?mt=12&ls=1)
+- [cloudapp_api](https://github.com/aaronrussell/cloudapp_api) and cli frontend
+  [cloudapp_cli](https://github.com/cmur2/cloudapp-cli)
+  (thanks to [cmur2](https://github.com/cmur2))
+- [Stratus](http://www.getstratusapp.com/) – CloudApp Client for iOS
 
 ### Links:
 
