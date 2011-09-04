@@ -108,7 +108,7 @@ def Account(email, passwd, **kw):
     
         domain:           custom domain, only in Pro available
         domain_home_page: http://developer.getcloudapp.com/view-domain-details
-        private_items:    <unknown>
+        private_items:    http://developer.getcloudapp.com/change-default-security
         subscribed:       Pro feature, custom domain... we don't need this.
         alpha:            <unkown> wtf?
         created_at:       timestamp created – '%Y-%m-%dT%H:%M:%SZ' UTC
@@ -360,9 +360,9 @@ def modify_item(environ, request, objectid):
             if not key in ['private', 'name', 'deleted_at']: raise ValueError
         except ValueError:
             return Response('Unprocessable Entity.', 422)
-    
-        if item['item_type'] == 'bookmark':
-            item[key] = value
+
+        if key == 'name' and item['item_type'] != 'bookmark':
+            item['filename'] = value
         else:
             item[key] = value
     
