@@ -91,7 +91,8 @@ def Item(obj, **kw):
     
     try:
         x['created_at'] = obj.created_at
-        x['updated_at'] = obj.created_at
+        x['updated_at'] = obj.updated_at
+        x['deleted_at'] = obj.deleted_at
     except AttributeError:
         # using now()
         pass
@@ -228,12 +229,12 @@ def items(environ, request):
             - per_page (int) – default: 5
             - type (str)     – default: None, filter by image, bookmark, text,
                                              archive, audio, video, or unknown
-            - deleted (bool) – default: True, show trashed items
+            - deleted (bool) – default: False, show trashed items
         
     -- http://developer.getcloudapp.com/list-items'''
     
     ParseResult = urlparse(request.url)
-    params = {'per_page': '5', 'page': '1', 'type': None, 'deleted': True}
+    params = {'per_page': '5', 'page': '1', 'type': None, 'deleted': False}
     
     if not ParseResult.query == '':
         query = dict([part.split('=', 1) for part in ParseResult.query.split('&')])
@@ -247,12 +248,14 @@ def items(environ, request):
     except (ValueError, KeyError):
         return Response('Bad Request.', 400)
     
-    if params['type'] == None:
-        items = db.items.find({'account': email})        
-    else:
-        items = db.items.find({'account': email, 'item_type': params['type']})
+    query = {'account': email}
+    if params['type'] != None:
+        query['item_type'] = params['type']
+    if params['deleted'] == False:
+        query['deleted_at'] = None
     
-    for item in items.sort('updated_at'):#[ipp*(page-1):ipp*page]:
+    items = db.items.find(query)
+    for item in items.sort('updated_at')[ipp*(page-1):ipp*page]:
         listing.append(Item(fs.get(_id=item['_id'])))
 
     return Response(json.dumps(listing), 200, content_type='application/json; charset=utf-8')
@@ -334,26 +337,36 @@ def view_item(environ, request, short_id):
              
     return Response(json.dumps(x), 200)
 
+
 @login
-def rename_item(environ, request, objectid):
+def modify_item(environ, request, objectid):
+    '''rename/delete/change privacy of an item.
+    
+    -- http://developer.getcloudapp.com/rename-item
+    -- http://developer.getcloudapp.com/delete-item
+    -- http://developer.getcloudapp.com/change-security-of-item'''
     
     item = db.items.find_one({'account': request.authorization.username,
                               '_id': objectid})
     if not item:
         return Response('Not found.', 404)
-        
-    try:
-        data = json.loads(request.data)
-        name = data['item']['name']
-    except (ValueError, KeyError):
-        return Response('Unprocessable Entity.', 422)
     
-    if item['item_type'] == 'bookmark':
-        item['name'] = name
-    else:
-        item['filename'] = name
+    if request.method == 'DELETE':
+        item['deleted_at'] = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
+    elif request.method == 'PUT':
+        try:
+            data = json.loads(request.data)['item']
+            key, value = data.items()[0]
+            if not key in ['private', 'name', 'deleted_at']: raise ValueError
+        except ValueError:
+            return Response('Unprocessable Entity.', 422)
+    
+        if item['item_type'] == 'bookmark':
+            item[key] = value
+        else:
+            item[key] = value
+    
     db.items.save(item)
-    
     return Response(json.dumps(Item(item)), 200)
 
 

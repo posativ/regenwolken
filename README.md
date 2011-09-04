@@ -90,14 +90,16 @@ calls of [CloudApp's API](http://developer.getcloudapp.com/) missing.
 
     # -H "Accept: application/json"
 
-    /              - POST files
-    /items         - POST (multiple) bookmarks
-    /register      - POST register (instantly) new account
-    /<short_id>    - GET item details
-    /account       - GET account info
-    /account/stats - GET overall file count and views
-    /items         - GET list of uploaded items
-    /items/new     - GET key for new upload
+    /                 - POST files
+    /items            - POST (multiple) bookmarks
+    /register         - POST register (instantly) new account
+    /<short_id>       - GET item details
+    /account          - GET account info
+    /account/stats    - GET overall file count and views
+    /items            - GET list of uploaded items
+    /items/new        - GET key for new upload
+    /items/<short_id> - PUT rename/recover/change privacy of item
+    /items/<short_id> - DELETE item
     
     # -H "Accept: text/html"
     
@@ -109,7 +111,7 @@ calls of [CloudApp's API](http://developer.getcloudapp.com/) missing.
 
 - Mac OS X [Cloud](http://itunes.apple.com/us/app/cloud/id417602904?mt=12&ls=1)
 - [cloudapp_api](https://github.com/aaronrussell/cloudapp_api) and cli frontend
-  [cloudapp_cli](https://github.com/cmur2/cloudapp-cli)
+  [cloudapp-cli](https://github.com/cmur2/cloudapp-cli)
   (thanks to [cmur2](https://github.com/cmur2))
 - [Stratus](http://www.getstratusapp.com/) – CloudApp Client for iOS
 

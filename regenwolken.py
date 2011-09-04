@@ -75,7 +75,7 @@ REST_map = Map([
     Rule('/account/stats', endpoint=REST.account_stats),
     Rule('/items', endpoint=REST.items),
     Rule('/items/new', endpoint=REST.items_new),
-    Rule('/items/<objectid>', endpoint=REST.rename_item, methods=['PUT', 'HEAD']),
+    Rule('/items/<objectid>', endpoint=REST.modify_item, methods=['HEAD', 'PUT', 'DELETE']),
 ])
 
 
