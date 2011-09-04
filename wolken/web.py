@@ -19,12 +19,12 @@ def index(environ, response):
     
     return Response(body, 200, content_type='text/html')
 
-def show(environ, request, short):
+def show(environ, request, short_id):
     """returns file either as direct download with human-readable, original
     filename or inline display using whitelisting"""
     
     try:
-        f = fs.get(url=short)
+        f = fs.get(short_id=short_id)
         cnt = f.view_counter
         fs.update(f._id, view_counter=cnt+1)
     except NoFile:
@@ -35,10 +35,10 @@ def show(environ, request, short):
     return Response(f, content_type=f.content_type)
     
 
-def redirect(environ, request, short):
+def redirect(environ, request, short_id):
     """find short id and redirect to this url"""
     
-    cur = db.items.find_one({'url': 'http://%s/-%s' % (SETTINGS.HOSTNAME, short)})
+    cur = db.items.find_one({'short_id': '-'+short_id})
     if not cur:
         return Response('Not found.', 404)
         

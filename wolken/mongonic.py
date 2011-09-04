@@ -23,26 +23,27 @@ class GridFS:
         
     def put(self, data, _id, content_type, filename, **kw):
         
-        mime = content_type.split('/', 1)[0]
-        if not mime in ['image', 'text', 'archive', 'audio', 'video']:
-            mime = 'unkown'
+        item_type = content_type.split('/', 1)[0]
+        if not item_type in ['image', 'text', 'archive', 'audio', 'video']:
+            item_type = 'unknown'
         
         _id = self.gfs.put(data, _id=_id, content_type=content_type,
                            filename=filename)
-        if kw:
-            kw.update({'_id': _id, 'item_type': mime})
-            self.mdb.insert(kw)
+        if not kw:
+            kw = {}
+        kw.update({'_id': _id, 'item_type': item_type})
+        self.mdb.insert(kw)
             
         return _id
             
-    def get(self, _id=None, url=None):
+    def get(self, _id=None, short_id=None):
         '''if url is given, we need a reverse lookup in metadata.  Returns
         a GridOut with additional metadata added.'''
 
         if _id:
             cur = self.mdb.find_one({'_id': _id})
         else:
-            cur = self.mdb.find_one({'url': url})
+            cur = self.mdb.find_one({'short_id': short_id})
             _id = cur['_id']
             if not cur:
                 raise gridfs.errors.NoFile
