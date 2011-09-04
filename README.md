@@ -107,7 +107,7 @@ calls of [CloudApp's API](http://developer.getcloudapp.com/) missing.
     /<short_id>    - GET file
     /-<short_id>   - GET redirect from bookmark
     
-#### status codes
+status codes used in Regenwolken:
 
     200 Ok           - everything fine
     201 Ok           - register was successfully
@@ -119,13 +119,29 @@ calls of [CloudApp's API](http://developer.getcloudapp.com/) missing.
     406 User already exists - when /register-ing an alreay existing user
     413 Request Entity Too Large - our size limit is 64 MiB
     
-### tested clients
+not implemented
+
+    View Domain Details - because of it's different domain name.
+                          |- http://developer.getcloudapp.com/view-domain-details
+    Stream Items        - WTF is this? Don't need it. mplayer can stream.
+                          |- http://developer.getcloudapp.com/streaming-items
+    Gift cards          - not needed.
+                          |- http://developer.getcloudapp.com/redeem-gift-card
+                          |- http://developer.getcloudapp.com/view-gift-card
+     
+    
+### working clients
 
 - Mac OS X [Cloud](http://itunes.apple.com/us/app/cloud/id417602904?mt=12&ls=1)
 - [cloudapp_api](https://github.com/aaronrussell/cloudapp_api) and cli frontend
   [cloudapp-cli](https://github.com/cmur2/cloudapp-cli)
   (thanks to [cmur2](https://github.com/cmur2))
-- [Stratus](http://www.getstratusapp.com/) – CloudApp Client for iOS
+- [Stratus](http://www.getstratusapp.com/) – CloudApp Client for iOS, but failing sometimes
+- [Cloudette](http://cloudetteapp.com/) – free CloudApp iPhone client, works flawlessly
+
+### failing clients
+
+- Windows' [FluffyApp](http://fluffyapp.com/), because their aren't using the API m(
 
 ### Links:
 
