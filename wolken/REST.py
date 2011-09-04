@@ -12,7 +12,6 @@ __version__ = "0.2"
 from random import getrandbits, choice, randint
 from urlparse import urlparse
 from time import strftime, gmtime
-from datetime import datetime
 import hashlib
 import string
 
@@ -137,7 +136,9 @@ def gen(length=8, charset=string.ascii_lowercase+string.digits):
 
 def login(f):
     """login decorator using HTTP Digest Authentication.  Pattern based on
-    http://flask.pocoo.org/docs/patterns/viewdecorators/"""
+    http://flask.pocoo.org/docs/patterns/viewdecorators/
+    
+    -- http://developer.getcloudapp.com/usage/#authentication"""
     
     def md5(data):
         return hashlib.md5(data).hexdigest()
@@ -179,8 +180,9 @@ def login(f):
 
 @login
 def account(environ, request):
-    """returns account details, see Account for furhter details.  Also see
-    http://developer.getcloudapp.com/view-account-details"""
+    """returns account details, see Account for furhter details.
+    
+    -- http://developer.getcloudapp.com/view-account-details"""
     
     email = request.authorization.username
     acc = db.accounts.find({'email': email})[0]
@@ -195,6 +197,10 @@ def account(environ, request):
 
 @login
 def account_stats(environ, request):
+    '''view account's item count and overall views.
+    
+    -- http://developer.getcloudapp.com/view-account-stats'''
+    
     
     email = request.authorization.username
     items = db.accounts.find_one({'email': email})['items']
@@ -224,7 +230,8 @@ def items(environ, request):
         :deleted (Boolean) — default: true —
 
         Show trashed drops
-    '''
+        
+    -- http://developer.getcloudapp.com/list-items'''
     
     ParseResult = urlparse(request.url)
     params = {'per_page': '5', 'page': '1', 'type': 'image', 'deleted': True}
@@ -256,7 +263,9 @@ def items(environ, request):
 
 @login
 def items_new(environ, request):
-    '''generates a new key for upload process.  Timeout after 60 minutes!'''
+    '''generates a new key for upload process.  Timeout after 60 minutes!
+    
+    -- http://developer.getcloudapp.com/upload-file'''
     
     key = sessions.new(request.authorization.username)
     d = { "url": "http://my.cl.ly",
@@ -269,7 +278,9 @@ def items_new(environ, request):
 
 
 def upload_file(environ, request):
-    '''upload file, when authorized with `key`'''
+    '''upload file, when authorized with `key`
+    
+    -- http://developer.getcloudapp.com/upload-file'''
     
     if not request.form.get('key') in sessions:
         return Response('Unauthorized.', 403)
@@ -308,7 +319,9 @@ def upload_file(environ, request):
 def view_item(environ, request, short_id):
     '''Implements: View Item.  http://developer.getcloudapp.com/view-item.
     Only via `Accept: application/json` accessible, returns 404 Not Found, if
-    URL does not exist.'''
+    URL does not exist.
+    
+    -- http://developer.getcloudapp.com/view-item'''
     
     if short_id.startswith('-'):
         cur = db.items.find_one({'short_id': short_id})
@@ -327,6 +340,9 @@ def view_item(environ, request, short_id):
 
 @login
 def bookmark(environ, request):
+    """url shortening.
+    
+    -- http://developer.getcloudapp.com/bookmark-link"""
     
     def insert(name, redirect_url):
         
@@ -369,7 +385,9 @@ def bookmark(environ, request):
 
 def register(environ, request):
     """Allows (instant) registration of new users.  Invokes Account() and
-    is saved directly into database."""
+    is saved directly into database.
+    
+    -- http://developer.getcloudapp.com/register"""
     
     if len(request.data) > 200:
         return Response('Request Entity Too Large', 413)
