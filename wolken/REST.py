@@ -23,7 +23,7 @@ except ImportError:
 from werkzeug.wrappers import Response
 from wolken import Sessions, SETTINGS, Struct
 
-from pymongo import Connection
+from pymongo import Connection, DESCENDING
 from pymongo.errors import DuplicateKeyError
 from gridfs.errors import NoFile
 
@@ -218,7 +218,7 @@ def account_stats(environ, request):
         views += db.items.find_one({'_id': item})['view_counter']
     
     d = {'items': len(items), 'views': views}
-    return Response(json.dumps(d), 200)
+    return Response(json.dumps(d), 200, content_type='application/json; charset=utf-8')
     
 
 @login
@@ -255,10 +255,10 @@ def items(environ, request):
         query['deleted_at'] = None
     
     items = db.items.find(query)
-    for item in items.sort('updated_at')[ipp*(page-1):ipp*page]:
+    for item in items.sort('updated_at', DESCENDING)[ipp*(page-1):ipp*page]:
         listing.append(Item(fs.get(_id=item['_id'])))
 
-    return Response(json.dumps(listing), 200, content_type='application/json; charset=utf-8')
+    return Response(json.dumps(listing[::-1]), 200, content_type='application/json; charset=utf-8')
     
 
 @login
@@ -312,7 +312,7 @@ def upload_file(environ, request):
     db.accounts.update({'_id': acc['_id']}, {'$set': {'items': items}}, upsert=False)
     
     obj = fs.get(_id)
-    return Response(json.dumps(Item(obj)), content_type='application/json')
+    return Response(json.dumps(Item(obj)), content_type='application/json; charset=utf-8')
 
 
 #@login
@@ -335,7 +335,7 @@ def view_item(environ, request, short_id):
             return Response('File not found!', 404)
         x = Item(obj)
              
-    return Response(json.dumps(x), 200)
+    return Response(json.dumps(x), 200, content_type='application/json; charset=utf-8')
 
 
 @login
@@ -367,7 +367,8 @@ def modify_item(environ, request, objectid):
             item[key] = value
     
     db.items.save(item)
-    return Response(json.dumps(Item(item)), 200)
+    item = fs.get(item['_id'])
+    return Response(json.dumps(Item(item)), 200, content_type='application/json; charset=utf-8')
 
 
 @login
@@ -412,10 +413,10 @@ def bookmark(environ, request):
         
     if isinstance(data, list):
         L = [insert(d['name'], d['redirect_url']) for d in data]
-        return Response(json.dumps(L), 200)
+        return Response(json.dumps(L), 200, content_type='application/json; charset=utf-8')
     else:
         I = insert(data['name'], data['redirect_url'])
-        return Response(json.dumps(I), 200)
+        return Response(json.dumps(I), 200, content_type='application/json; charset=utf-8')
 
 
 def register(environ, request):
@@ -439,11 +440,11 @@ def register(environ, request):
         return Response('Bad Request.', 400)
     
     if db.accounts.find({'email': email}).count() > 0:
-        return Response('Not Acceptable.', 406)
+        return Response('User already exists.', 406)
     
     acc = Account(email=email, passwd=passwd,
                   activated_at=strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()))
     db.accounts.insert(acc)
     
     acc['id'] = db.accounts.count()+1; del acc['_id'] # JSONEncoder can't handle ObjectId
-    return Response(json.dumps(acc), 201)
+    return Response(json.dumps(acc), 201, content_type='application/json; charset=utf-8')
