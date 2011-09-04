@@ -4,6 +4,8 @@
 # Copyright 2011 posativ <info@posativ.org>. All rights reserved.
 # License: BSD Style, 2 clauses.
 
+__version__ = "0.2"
+
 from wolken import Struct
 import gridfs
 
@@ -44,9 +46,9 @@ class GridFS:
             cur = self.mdb.find_one({'_id': _id})
         else:
             cur = self.mdb.find_one({'short_id': short_id})
-            _id = cur['_id']
             if not cur:
                 raise gridfs.errors.NoFile
+            _id = cur['_id']
         
         if cur.get('item_type', '') == 'bookmark':
             return Struct(**cur)

@@ -5,9 +5,9 @@
 # License: BSD Style, 2 clauses.
 #
 #
-# Wolken is a Cloud.app clone, with leave the cloud in mind.
+# Wolken is a CloudApp clone, with leave the cloud in mind.
 
-__version__ = "0.1.2-alpha"
+__version__ = "0.2"
 
 import sys; reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -20,7 +20,6 @@ from werkzeug.datastructures import Authorization
 from werkzeug.utils import cached_property
 
 from wolken import SETTINGS, REST, web
-
 
 def parse_authorization_header(value):
     """make nc and cnonce optional, see https://github.com/mitsuhiko/werkzeug/pull/100"""
@@ -48,6 +47,7 @@ def parse_authorization_header(value):
                 return
         return Authorization('digest', auth_map)
 
+
 class Wolkenrequest(Request):
     """fixing HTTP Digest Auth fallback"""
     # FIXME: Cloud.app can not handle 413 Request Entity Too Large
@@ -59,14 +59,11 @@ class Wolkenrequest(Request):
         header = self.environ.get('HTTP_AUTHORIZATION')
         return parse_authorization_header(header)
 
+
 HTML_map = Map([
     Rule('/', endpoint=web.index),
     Rule('/-<short_id>', endpoint=web.redirect),
     Rule('/<short_id>', endpoint=web.show),
-#    Rule('/account', endpoint='web.account'),
- #   Submount('/items', [
- #       Rule('/', endpoint='web.items.index'),
- #   ]),
 ])
 
 REST_map = Map([
@@ -78,7 +75,6 @@ REST_map = Map([
     Rule('/account/stats', endpoint=REST.account_stats),
     Rule('/items', endpoint=REST.items),
     Rule('/items/new', endpoint=REST.items_new),
-#    Rule('/items/<short>', endpoint=REST.view_item)
 ])
 
 
@@ -90,11 +86,11 @@ def application(environ, start_response):
     if request.headers.get('Accept', 'application/json') == 'application/json':
         urls = REST_map.bind_to_environ(environ)
     else:
-        #urls = REST_map.bind_to_environ(environ)
         urls = HTML_map.bind_to_environ(environ)
 
     return urls.dispatch(lambda f, v: f(environ, request, **v),
                          catch_http_exceptions=True)
+
 
 if __name__ == '__main__':
     from werkzeug.serving import run_simple    

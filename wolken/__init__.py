@@ -4,7 +4,7 @@
 # Copyright 2011 posativ <info@posativ.org>. All rights reserved.
 # License: BSD Style, 2 clauses.
 
-__version__ = "0.1.2-alpha"
+__version__ = "0.2"
 
 import sys
 import os
@@ -31,7 +31,7 @@ class Config():
             line = line.strip()
             if line and not line.startswith('#'):
                 try:
-                    key, value = line.split(':')
+                    key, value = line.split(':', 1)
                     key, value = key.strip(), value.strip()
                 except ValueError:
                     print >> sys.stderr, 'line is wrong `%s`' % line

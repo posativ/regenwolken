@@ -7,7 +7,7 @@
 # TODO: hashing passwords + salt
 # TODO: rework json Item generation and feature updated_at timestamp
 
-__version__ = "0.1.2-alpha"
+__version__ = "0.2"
 
 from random import getrandbits, choice, randint
 from urlparse import urlparse
@@ -34,7 +34,6 @@ db = Connection(SETTINGS.MONGODB_HOST, SETTINGS.MONGODB_PORT)['cloudapp']
 
 from wolken.mongonic import GridFS
 fs = GridFS(db)
-#fs = wolken.Grid('fsdb')
 
 HOSTNAME = SETTINGS.HOSTNAME
 
@@ -347,7 +346,6 @@ def bookmark(environ, request):
         
         db.items.insert(x)
         
-        print request.authorization
         acc = db.accounts.find_one({'email': request.authorization.username})
         items = acc['items']
         items.append(_id)
