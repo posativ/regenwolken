@@ -214,27 +214,18 @@ def account_stats(environ, request):
 
 @login
 def items(environ, request):
-    '''list items from user
-    
-        Options Hash (opts):
-
-        :page (Integer) — default: 1 —
-
-        Page number starting at 1
-        :per_page (Integer) — default: 5 —
-
-        Number of items per page
-        :type (String) — default: 'image' —
-
-        Filter items by type (image, bookmark, text, archive, audio, video, or unknown)
-        :deleted (Boolean) — default: true —
-
-        Show trashed drops
+    '''list items from user.  Optional query parameters:
+            
+            - page (int)     — default: 1
+            - per_page (int) – default: 5
+            - type (str)     – default: None, filter by image, bookmark, text,
+                                             archive, audio, video, or unknown
+            - deleted (bool) – default: True, show trashed items
         
     -- http://developer.getcloudapp.com/list-items'''
     
     ParseResult = urlparse(request.url)
-    params = {'per_page': '5', 'page': '1', 'type': 'image', 'deleted': True}
+    params = {'per_page': '5', 'page': '1', 'type': None, 'deleted': True}
     
     if not ParseResult.query == '':
         query = dict([part.split('=', 1) for part in ParseResult.query.split('&')])
@@ -248,16 +239,14 @@ def items(environ, request):
     except (ValueError, KeyError):
         return Response('Bad Request.', 400)
     
-    # TODO: filter by type and deleted
-    items = db.accounts.find_one({'email': email})['items']
-    for item in items[ipp*(page-1):ipp*page]:
-        cur = Struct(**db.items.find_one({'_id': item}))
-        if cur.item_type == 'bookmark':
-            x = Item(cur)
-        else:
-            x = Item(fs.get(item))
-        listing.append(x)
+    if params['type'] == None:
+        items = db.items.find({'account': email})        
+    else:
+        items = db.items.find({'account': email, 'item_type': params['type']})
     
+    for item in items[ipp*(page-1):ipp*page]:
+        listing.append(Item(fs.get(_id=item['_id'])))
+
     return Response(json.dumps(listing), 200, content_type='application/json; charset=utf-8')
     
 
@@ -350,6 +339,7 @@ def bookmark(environ, request):
         short_id = '-' + gen(randint(3,6))
         
         x = {
+            'account': request.authorization.username,
             'name': name,
             '_id': _id,
             'short_id': short_id,
