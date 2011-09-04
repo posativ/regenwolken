@@ -61,6 +61,7 @@ def Item(obj, **kw):
     x = {}
     if isinstance(obj, dict):
         obj = Struct(**obj)
+        
     
     __dict__ = {
         "href": "http://%s/items/%s" % (HOSTNAME, obj._id),
@@ -87,6 +88,13 @@ def Item(obj, **kw):
         x['remote_url'] = x['url']
         x['thumbnail_url'] = x['url'] # TODO: thumbails
         x['redirect_url'] = None
+    
+    try:
+        x['created_at'] = obj.created_at
+        x['updated_at'] = obj.created_at
+    except AttributeError:
+        # using now()
+        pass
     
     __dict__.update(x)    
     __dict__.update(kw)
@@ -244,7 +252,7 @@ def items(environ, request):
     else:
         items = db.items.find({'account': email, 'item_type': params['type']})
     
-    for item in items[ipp*(page-1):ipp*page]:
+    for item in items.sort('updated_at'):#[ipp*(page-1):ipp*page]:
         listing.append(Item(fs.get(_id=item['_id'])))
 
     return Response(json.dumps(listing), 200, content_type='application/json; charset=utf-8')
@@ -326,6 +334,28 @@ def view_item(environ, request, short_id):
              
     return Response(json.dumps(x), 200)
 
+@login
+def rename_item(environ, request, objectid):
+    
+    item = db.items.find_one({'account': request.authorization.username,
+                              '_id': objectid})
+    if not item:
+        return Response('Not found.', 404)
+        
+    try:
+        data = json.loads(request.data)
+        name = data['item']['name']
+    except (ValueError, KeyError):
+        return Response('Unprocessable Entity.', 422)
+    
+    if item['item_type'] == 'bookmark':
+        item['name'] = name
+    else:
+        item['filename'] = name
+    db.items.save(item)
+    
+    return Response(json.dumps(Item(item)), 200)
+
 
 @login
 def bookmark(environ, request):
@@ -345,7 +375,9 @@ def bookmark(environ, request):
             'short_id': short_id,
             'redirect_url': redirect_url,
             'item_type': 'bookmark',
-            'view_counter': 0
+            'view_counter': 0,
+            'created_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
+            'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         }
         
         item = Item(x)
