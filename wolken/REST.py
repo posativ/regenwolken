@@ -11,6 +11,7 @@ __version__ = "0.2"
 
 from random import getrandbits, choice, randint
 from urlparse import urlparse
+from urllib import unquote
 from time import strftime, gmtime
 import hashlib
 import string
@@ -70,7 +71,7 @@ def Item(obj, **kw):
         "item_type": obj.item_type,
         "view_counter": obj.view_counter,
         "icon": "http://%s/images/item_types/%s.png" % (HOSTNAME, obj.item_type),
-        "source": "Regenwolken/%s LeaveTheCloud/Now" % __version__,
+        "source": obj.source,
         "created_at": strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         "updated_at": strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         "deleted_at": None }
@@ -234,7 +235,8 @@ def items(environ, request):
     -- http://developer.getcloudapp.com/list-items'''
     
     ParseResult = urlparse(request.url)
-    params = {'per_page': '5', 'page': '1', 'type': None, 'deleted': False}
+    params = {'per_page': '5', 'page': '1', 'type': None, 'deleted': False,
+              'source': None}
     
     if not ParseResult.query == '':
         query = dict([part.split('=', 1) for part in ParseResult.query.split('&')])
@@ -253,6 +255,8 @@ def items(environ, request):
         query['item_type'] = params['type']
     if params['deleted'] == False:
         query['deleted_at'] = None
+    if params['source'] != None:
+        query['source'] = {'$regex': '^' + unquote(params['source'])}
     
     items = db.items.find(query)
     for item in items.sort('updated_at', DESCENDING)[ipp*(page-1):ipp*page]:
@@ -286,6 +290,7 @@ def upload_file(environ, request):
         return Response('Unauthorized.', 403)
     
     account = sessions.get(request.form.get('key'))['account']
+    source = request.headers.get('User-Agent', 'Regenschirm++/1.0').split(' ', 1)[0]
     timestamp = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
     obj = request.files.get('file')
     if not obj:
@@ -301,7 +306,8 @@ def upload_file(environ, request):
         try:
             fs.put(obj, _id=_id ,filename=filename, created_at=timestamp,
                    content_type=obj.mimetype, account=account, view_counter=0,
-                   short_id=gen(randint(3,8)), updated_at=timestamp)
+                   short_id=gen(randint(3,8)), updated_at=timestamp,
+                   source=source)
             break
         except DuplicateKeyError:
             pass
