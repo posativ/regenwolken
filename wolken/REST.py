@@ -212,7 +212,7 @@ def account(environ, request):
             return Response('Unprocessable Entity.', 422)            
         
         if len(data.keys()) == 1 and 'private_items' in data:
-            db.accounts.update({'_id': _id}, {'private_items': data['private_items']})
+            db.accounts.update({'_id': _id}, {'$set': {'private_items': data['private_items']}})
             account['private_items'] = data['private_items']
         elif len(data.keys()) == 2 and 'current_password' in data:
             if not account['passwd'] == data['current_password']:
