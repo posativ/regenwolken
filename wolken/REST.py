@@ -36,7 +36,7 @@ from wolken.mongonic import GridFS
 fs = GridFS(db)
 
 HOSTNAME = SETTINGS.HOSTNAME
-
+ALLOWED_CHARS = string.digits + string.ascii_letters + '.- @'
 
 def Item(obj, **kw):
     """JSON-compatible dict representing Item.  
@@ -101,10 +101,9 @@ def Item(obj, **kw):
     __dict__.update(x)    
     __dict__.update(kw)
     return __dict__
-        
 
 
-def Account(email, passwd, **kw):
+def Account(account, **kw):
     """JSON-compatible dict representing cloudapp's account
     
         domain:           custom domain, only in Pro available
@@ -121,22 +120,24 @@ def Account(email, passwd, **kw):
         password:         cleartext password TODO: hashing
     """
     
-    __dict__ = {
-        'domain': None,
+    x = {
+        'id': account['id'],
+        'domain': HOSTNAME,
         'domain_home_page': None,
         'private_items': True,
-        'subscribed': False,
+        'subscribed': True,
+        'subscription_expires_at': '2112-12-21',
         'alpha': False,
         'created_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         'activated_at': None,
         "items": [],
-        'email': email,
-        'passwd': passwd
+        'email': account['email'],
+        'passwd': account['passwd']
     }
     
-    __dict__.update(kw)
-    return __dict__
+    x.update(kw)
+    return x
     
 
 def gen(length=8, charset=string.ascii_lowercase+string.digits):
@@ -190,19 +191,54 @@ def login(f):
 
 @login
 def account(environ, request):
-    """returns account details, see Account for furhter details.
+    """returns account details, and update given keys.
     
-    -- http://developer.getcloudapp.com/view-account-details"""
+    -- http://developer.getcloudapp.com/view-account-details
+    -- http://developer.getcloudapp.com/change-default-security
+    -- http://developer.getcloudapp.com/change-email
+    -- http://developer.getcloudapp.com/change-password"""
     
-    email = request.authorization.username
-    acc = db.accounts.find({'email': email})[0]
-    acc['id'] = int(str(acc['_id']), 16)
-    acc['subscribed'] = True
-    acc['subscription_expires_at'] = '2012-12-21'
-    acc['domain'] = HOSTNAME
+    account = db.accounts.find_one({'email': request.authorization.username})
+    if not account:
+        return Response('Not found.', 404)
     
-    del acc['_id']; del acc['items']
-    return Response(json.dumps(acc), 200, content_type='application/json; charset=utf-8')
+    if request.method == 'GET':
+        pass
+    elif request.method == 'PUT':
+        try:
+            _id = account['_id']
+            data = json.loads(request.data)['user']
+        except ValueError:
+            return Response('Unprocessable Entity.', 422)            
+        
+        if len(data.keys()) == 1 and 'private_items' in data:
+            db.accounts.update({'_id': _id}, {'private_items': data['private_items']})
+            account['private_items'] = data['private_items']
+        elif len(data.keys()) == 2 and 'current_password' in data:
+            if not account['passwd'] == data['current_password']:
+                return Response('Wrong password!', 403)
+            
+            if data.has_key('email'):
+                if filter(lambda c: not c in ALLOWED_CHARS, data['email']):
+                    return Response('Bad Request.', 400)
+                if db.accounts.find_one({'email': data['email']}) and \
+                account['email'] != data['email']:
+                    return Response('User already exists.', 406)
+                db.accounts.update({'_id': _id}, {'$set': {'email': data['email']}})
+                account['email'] = data['email']
+            elif data.has_key('password'):
+                db.accounts.update({'_id': _id}, {'$set': {'passwd': data['password']}})
+                account['passwd'] = data['password']
+            else:
+                 return Response('Bad Request.', 400)
+
+    
+    elif request.method == 'DELETE':
+        # TODO: add DELETE functionality
+        pass
+    
+    del account['_id']; del account['items']; del account['passwd']
+    return Response(json.dumps(account), 200, content_type='application/json; charset=utf-8')
 
 
 @login
@@ -441,16 +477,16 @@ def register(environ, request):
         return Response('Bad Request.', 400)
     
     # TODO: allow more characters, unicode -> ascii, before filter
-    allowed_chars = string.digits + string.ascii_letters + '.- @'
-    if filter(lambda c: not c in allowed_chars, email):
+    if filter(lambda c: not c in ALLOWED_CHARS, email):
         return Response('Bad Request.', 400)
     
     if db.accounts.find({'email': email}).count() > 0:
         return Response('User already exists.', 406)
     
-    acc = Account(email=email, passwd=passwd,
-                  activated_at=strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()))
-    db.accounts.insert(acc)
+    account = Account({'email': email, 'passwd': passwd, 'id': db.accounts.count()+1},
+                      activated_at=strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()))
+    account['_id'] = account['id']
+    db.accounts.insert(account)
+    del account['_id']; del account['items']; del account['passwd']
     
-    acc['id'] = db.accounts.count()+1; del acc['_id'] # JSONEncoder can't handle ObjectId
-    return Response(json.dumps(acc), 201, content_type='application/json; charset=utf-8')
+    return Response(json.dumps(account), 201, content_type='application/json; charset=utf-8')
