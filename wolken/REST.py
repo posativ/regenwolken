@@ -231,11 +231,6 @@ def account(environ, request):
                 account['passwd'] = data['password']
             else:
                  return Response('Bad Request.', 400)
-
-    
-    elif request.method == 'DELETE':
-        # TODO: add DELETE functionality
-        pass
     
     del account['_id']; del account['items']; del account['passwd']
     return Response(json.dumps(account), 200, content_type='application/json; charset=utf-8')
@@ -432,6 +427,7 @@ def bookmark(environ, request):
             'redirect_url': redirect_url,
             'item_type': 'bookmark',
             'view_counter': 0,
+            'source': request.headers.get('User-Agent', 'Regenschirm++/1.0').split(' ', 1)[0],
             'created_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
             'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         }
