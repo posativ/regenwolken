@@ -43,7 +43,7 @@ def Item(obj, **kw):
     
         href:           used for renaming -> http://developer.getcloudapp.com/rename-item
         name:           item's name, taken from filename
-        private:        returns in longer hash (not needed imho)
+        private:        requires auth when viewing
         subscribed:     true or false, when paid for “Pro”
         url:            url to this file
         content_url:    <unknown>
@@ -66,7 +66,7 @@ def Item(obj, **kw):
     
     __dict__ = {
         "href": "http://%s/items/%s" % (HOSTNAME, obj._id),
-        "private": True,
+        "private": obj.private,
         "subscribed": True,
         "item_type": obj.item_type,
         "view_counter": obj.view_counter,
@@ -95,7 +95,6 @@ def Item(obj, **kw):
         x['updated_at'] = obj.updated_at
         x['deleted_at'] = obj.deleted_at
     except AttributeError:
-        # using now()
         pass
     
     __dict__.update(x)    
@@ -124,7 +123,7 @@ def Account(account, **kw):
         'id': account['id'],
         'domain': HOSTNAME,
         'domain_home_page': None,
-        'private_items': True,
+        'private_items': False,
         'subscribed': True,
         'subscription_expires_at': '2112-12-21',
         'alpha': False,
@@ -138,7 +137,33 @@ def Account(account, **kw):
     
     x.update(kw)
     return x
+
+
+def md5(data):
+    """returns md5 of data has hexdigest"""
+    return hashlib.md5(data).hexdigest()
+
+def prove_auth(req):
+    """calculates  digest response (MD5 and qop)"""
     
+    def A1(auth):
+        query = db.accounts.find({'email': auth.username})
+        if query.count() == 1:
+            passwd = query[0]['passwd']
+        else:
+            passwd = '%x' % getrandbits(256)
+        return md5(auth.username + ':' + auth.realm + ':' + passwd)
+        
+    auth = req.authorization
+    if str(auth.get('qop', '')) == 'auth':
+        A2 = ':'.join([auth.nonce, auth.nc, auth.cnonce, 'auth',
+                       md5(req.method + ':' + auth.uri)])
+        return md5(A1(auth) + ':' + A2)
+    else:
+        # compatibility with RFC 2069: https://tools.ietf.org/html/rfc2069
+        A2 = ':'.join([auth.nonce, md5(req.method + ':' + auth.uri)])
+        return md5(A1(auth) + ':' + A2)
+
 
 def gen(length=8, charset=string.ascii_lowercase+string.digits):
     """generates a pseudorandom string of a-z0-9 of given length"""
@@ -150,30 +175,6 @@ def login(f):
     http://flask.pocoo.org/docs/patterns/viewdecorators/
     
     -- http://developer.getcloudapp.com/usage/#authentication"""
-    
-    def md5(data):
-        return hashlib.md5(data).hexdigest()
-    
-    def prove(req):
-        """calculates  digest response (MD5 and qop)"""
-        
-        def A1(auth):
-            query = db.accounts.find({'email': auth.username})
-            if query.count() == 1:
-                passwd = query[0]['passwd']
-            else:
-                passwd = '%x' % getrandbits(256)
-            return md5(auth.username + ':' + auth.realm + ':' + passwd)
-            
-        auth = req.authorization
-        if str(auth.get('qop', '')) == 'auth':
-            A2 = ':'.join([auth.nonce, auth.nc, auth.cnonce, 'auth',
-                           md5(req.method + ':' + auth.uri)])
-            return md5(A1(auth) + ':' + A2)
-        else:
-            # compatibility with RFC 2069: https://tools.ietf.org/html/rfc2069
-            A2 = ':'.join([auth.nonce, md5(req.method + ':' + auth.uri)])
-            return md5(A1(auth) + ':' + A2)
 
     def dec(env, req, *args, **kwargs):
         """This decorater function will send an authenticate header, if none
@@ -183,7 +184,7 @@ def login(f):
             response.www_authenticate.set_digest('Application', nonce='%x' % getrandbits(128),
                         qop=('auth', ), opaque='%x' % getrandbits(128), algorithm='MD5')
             return response
-        elif prove(req) != req.authorization.response:
+        elif prove_auth(req) != req.authorization.response:
             return Response('Unauthorized.', 403)
         return f(env, req, *args, **kwargs)
     return dec
@@ -321,6 +322,7 @@ def upload_file(environ, request):
         return Response('Unauthorized.', 403)
     
     account = sessions.get(request.form.get('key'))['account']
+    acc = db.accounts.find_one({'email': account})
     source = request.headers.get('User-Agent', 'Regenschirm++/1.0').split(' ', 1)[0]
     timestamp = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
     obj = request.files.get('file')
@@ -338,12 +340,11 @@ def upload_file(environ, request):
             fs.put(obj, _id=_id ,filename=filename, created_at=timestamp,
                    content_type=obj.mimetype, account=account, view_counter=0,
                    short_id=gen(randint(3,8)), updated_at=timestamp,
-                   source=source)
+                   source=source, private=acc['private_items'])
             break
         except DuplicateKeyError:
             pass
     
-    acc = db.accounts.find_one({'email': account})
     items = acc['items']
     items.append(_id)
     db.accounts.update({'_id': acc['_id']}, {'$set': {'items': items}}, upsert=False)
@@ -352,7 +353,7 @@ def upload_file(environ, request):
     return Response(json.dumps(Item(obj)), content_type='application/json; charset=utf-8')
 
 
-#@login
+@login
 def view_item(environ, request, short_id):
     '''Implements: View Item.  http://developer.getcloudapp.com/view-item.
     Only via `Accept: application/json` accessible, returns 404 Not Found, if
