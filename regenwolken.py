@@ -17,7 +17,7 @@
 # those of the authors and should not be interpreted as representing official
 # policies, either expressed or implied, of posativ <info@posativ.org>.
 #
-# Wolken is a CloudApp clone, with leave the cloud in mind.
+# Regenwolken is a CloudApp clone, with leave the cloud in mind.
 
 __version__ = "0.2"
 
