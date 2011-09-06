@@ -7,4 +7,4 @@ port: 80
 mongodb_host: 127.0.0.1
 mongodb_port: 27017
 
-backend: MongoDB
+max_content_length: 62914560

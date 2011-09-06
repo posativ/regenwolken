@@ -23,10 +23,26 @@ except ImportError:
     sys.exit(1)
 
 class Config():
-    """stores conf.yaml"""
+    """stores conf.yaml, Regenwolken has these config values:
+        - HOSTNAME
+        - BIND_ADDRESS
+        - PORT
+        - MONGODB_HOST
+        - MONGODB_PORT
+        
+        - ALLOWED_CHARS: characters allowed in username
+        - MAX_CONTENT_LENGTH: maximum content length before raising 413
+        """
     
     def __init__(self):
 
+        self.HOSTNAME = "localhost"
+        self.BIND_ADDRESS = "0.0.0.0"
+        self.PORT = 80
+        self.MONGODB_HOST = "127.0.0.1"
+        self.MONGODB_PORT = 27017
+        self.ALLOWED_CHARS = string.digits + string.ascii_letters + '.- @'
+        self.MAX_CONTENT_LENGTH = 1024*1024*64
         for line in open('conf.yaml'):
             line = line.strip()
             if line and not line.startswith('#'):
@@ -41,7 +57,7 @@ class Config():
                     value = int(value)
                 self.__dict__[key.upper()] = value
             
-SETTINGS = Config()
+conf = Config()
 
 class NoFile(Exception): pass
 class DuplicateKeyError(Exception): pass

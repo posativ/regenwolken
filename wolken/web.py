@@ -7,14 +7,14 @@ from os.path import basename
 from random import getrandbits
 
 from werkzeug import Response
-from wolken import SETTINGS
+from wolken import conf
 from wolken.mongonic import GridFS
 from pymongo import Connection
 from gridfs.errors import NoFile
 
 from wolken.REST import prove_auth
 
-db = Connection(SETTINGS.MONGODB_HOST, SETTINGS.MONGODB_PORT)['cloudapp']
+db = Connection(conf.MONGODB_HOST, conf.MONGODB_PORT)['cloudapp']
 fs = GridFS(db)
 
 

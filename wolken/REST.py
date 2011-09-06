@@ -22,7 +22,7 @@ except ImportError:
     import simplejson as json
 
 from werkzeug.wrappers import Response
-from wolken import Sessions, SETTINGS, Struct
+from wolken import Sessions, conf, Struct
 
 from pymongo import Connection, DESCENDING
 from pymongo.errors import DuplicateKeyError
@@ -30,13 +30,10 @@ from gridfs.errors import NoFile
 
 sessions = Sessions(timeout=3600)
 
-db = Connection(SETTINGS.MONGODB_HOST, SETTINGS.MONGODB_PORT)['cloudapp']
+db = Connection(conf.MONGODB_HOST, conf.MONGODB_PORT)['cloudapp']
 
 from wolken.mongonic import GridFS
 fs = GridFS(db)
-
-HOSTNAME = SETTINGS.HOSTNAME
-ALLOWED_CHARS = string.digits + string.ascii_letters + '.- @'
 
 def Item(obj, **kw):
     """JSON-compatible dict representing Item.  
@@ -65,12 +62,12 @@ def Item(obj, **kw):
         
     
     __dict__ = {
-        "href": "http://%s/items/%s" % (HOSTNAME, obj._id),
+        "href": "http://%s/items/%s" % (conf.HOSTNAME, obj._id),
         "private": obj.private,
         "subscribed": True,
         "item_type": obj.item_type,
         "view_counter": obj.view_counter,
-        "icon": "http://%s/images/item_types/%s.png" % (HOSTNAME, obj.item_type),
+        "icon": "http://%s/images/item_types/%s.png" % (conf.HOSTNAME, obj.item_type),
         "source": obj.source,
         "created_at": strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         "updated_at": strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
@@ -78,13 +75,13 @@ def Item(obj, **kw):
     
     if obj.item_type == 'bookmark':
         x['name'] = obj.name
-        x['url'] = 'http://' + HOSTNAME + '/' + obj.short_id
+        x['url'] = 'http://' + conf.HOSTNAME + '/' + obj.short_id
         x['content_url'] = x['url']
         x['remote_url'] = None
         x['redirect_url'] = obj.redirect_url
     else:
         x['name'] = obj.filename
-        x['url'] = 'http://' + HOSTNAME + '/' + obj.short_id
+        x['url'] = 'http://' + conf.HOSTNAME + '/' + obj.short_id
         x['content_url'] = x['url'] + '/' + obj.filename
         x['remote_url'] = x['url']
         x['thumbnail_url'] = x['url'] # TODO: thumbails
@@ -121,7 +118,7 @@ def Account(account, **kw):
     
     x = {
         'id': account['id'],
-        'domain': HOSTNAME,
+        'domain': conf.HOSTNAME,
         'domain_home_page': None,
         'private_items': False,
         'subscribed': True,
@@ -220,7 +217,7 @@ def account(environ, request):
                 return Response('Wrong password!', 403)
             
             if data.has_key('email'):
-                if filter(lambda c: not c in ALLOWED_CHARS, data['email']):
+                if filter(lambda c: not c in conf.ALLOWED_CHARS, data['email']):
                     return Response('Bad Request.', 400)
                 if db.accounts.find_one({'email': data['email']}) and \
                 account['email'] != data['email']:
@@ -317,6 +314,7 @@ def items_new(environ, request):
     
     key = sessions.new(request.authorization.username)
     d = { "url": "http://my.cl.ly",
+          "max_upload_size": conf.MAX_CONTENT_LENGTH,
           "params": { "acl": privacy,
                       "key": key
                     },
@@ -490,7 +488,7 @@ def register(environ, request):
         return Response('Bad Request.', 400)
     
     # TODO: allow more characters, unicode -> ascii, before filter
-    if filter(lambda c: not c in ALLOWED_CHARS, email):
+    if filter(lambda c: not c in conf.ALLOWED_CHARS, email):
         return Response('Bad Request.', 400)
     
     if db.accounts.find({'email': email}).count() > 0:

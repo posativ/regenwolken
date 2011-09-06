@@ -31,7 +31,8 @@ from werkzeug.http import parse_dict_header
 from werkzeug.datastructures import Authorization
 from werkzeug.utils import cached_property
 
-from wolken import SETTINGS, REST, web
+from wolken import conf, REST, web
+
 
 def parse_authorization_header(value):
     """make nc and cnonce optional, see https://github.com/mitsuhiko/werkzeug/pull/100"""
@@ -108,5 +109,5 @@ def application(environ, start_response):
 
 if __name__ == '__main__':
     from werkzeug.serving import run_simple    
-    run_simple(SETTINGS.BIND_ADDRESS, SETTINGS.PORT,
+    run_simple(conf.BIND_ADDRESS, conf.PORT,
                application, use_reloader=True)
