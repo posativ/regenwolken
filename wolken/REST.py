@@ -431,6 +431,8 @@ def bookmark(environ, request):
     
     def insert(name, redirect_url):
         
+        acc = db.accounts.find_one({'email': request.authorization.username})
+        
         _id = gen(12, charset=string.digits)
         short_id = '-' + gen(randint(3,6))
         
@@ -442,16 +444,16 @@ def bookmark(environ, request):
             'redirect_url': redirect_url,
             'item_type': 'bookmark',
             'view_counter': 0,
+            'private': request.form.get('acl', acc['private_items'])
+                if conf.ALLOW_PRIVATE_BOOKMARKS else False,
             'source': request.headers.get('User-Agent', 'Regenschirm++/1.0').split(' ', 1)[0],
             'created_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
             'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         }
         
         item = Item(x)
-        
         db.items.insert(x)
         
-        acc = db.accounts.find_one({'email': request.authorization.username})
         items = acc['items']
         items.append(_id)
         db.accounts.update({'_id': acc['_id']}, {'$set': {'items': items}}, upsert=False)

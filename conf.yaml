@@ -8,3 +8,4 @@ mongodb_host: 127.0.0.1
 mongodb_port: 27017
 
 max_content_length: 62914560
+allow_private_bookmarks: True

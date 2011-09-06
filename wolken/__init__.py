@@ -32,6 +32,7 @@ class Config():
         
         - ALLOWED_CHARS: characters allowed in username
         - MAX_CONTENT_LENGTH: maximum content length before raising 413
+        - ALLOW_PRIVATE_BOOKMARKS: True | False
         """
     
     def __init__(self):
@@ -43,6 +44,7 @@ class Config():
         self.MONGODB_PORT = 27017
         self.ALLOWED_CHARS = string.digits + string.ascii_letters + '.- @'
         self.MAX_CONTENT_LENGTH = 1024*1024*64
+        self.ALLOW_PRIVATE_BOOKMARKS = False
         for line in open('conf.yaml'):
             line = line.strip()
             if line and not line.startswith('#'):
@@ -55,6 +57,8 @@ class Config():
     
                 if value.isdigit():
                     value = int(value)
+                elif value.lower() in ['true', 'false']:
+                    value = bool(value.capitalize())
                 self.__dict__[key.upper()] = value
             
 conf = Config()
