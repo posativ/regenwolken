@@ -35,19 +35,18 @@ There are two different setups: serve on port 80 as HTTP server or use a
 proxy. For the next setp, I assume you'll host Regenwolken on *my.cloud.org*.
       
 First start MongoDB via `mongod --dbpath path/to/some/folder` and edit your
-*local* (means, where you'll use Cloud.app) /etc/hosts (replace 127.0.0.1
+*local* machine (where you run e.g. Cloud.app) */etc/hosts* (replace 127.0.0.1
 with the desired IP):
 
     127.0.0.1 my.cl.ly
     127.0.0.1 ws.pusherapp.com # <-- stratus app will drive insane without
 
-
 #### as HTTP server
 
-- check, there is no other process on port 80
-- run `python regenwolken.py` as root
-- finally launch Cloud.app, register and then log in
+This will setup Regenwolken as primary HTTP-Server, listening on Port 80.
+Therefore, you'll need root access.
 
+- check, there is no other process on port 80
 - start MongoDB via `mongod --dbpath path/to/some/folder`
 - run `sudo python wolken.py`
 - edit /etc/hosts to
@@ -56,7 +55,7 @@ with the desired IP):
 
 #### using lighttpd and mod_proxy
 
-(I recommend this way, I don't even trust software I've written myself). Edit
+Recommended way. Use some proxy-magic and run it as non-privileged user. Edit
 your /etc/lighttpd/lighttpd.conf to something like this:
 
     $HTTP["host"] =~ "cloud.org|my.cl.ly" {
@@ -74,6 +73,8 @@ your /etc/lighttpd/lighttpd.conf to something like this:
 - run `python regenwolken.py` as non-privileged user
 - finally launch Cloud.app, register and log in
 - take a test screenshot
+
+#### hints
 
 You might wonder, why we ask for "my.cloud.org|my.cl.ly". Your /eth/hosts
 will resolve my.cl.ly to your server IP and requesting with the *Host* my.cl.ly,
