@@ -233,6 +233,8 @@ def account(environ, request):
             else:
                  return Response('Bad Request.', 400)
     
+    db.accounts.update({'_id': account['_id']}, {'$set':
+            {'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())}})
     del account['_id']; del account['items']; del account['passwd']
     return Response(json.dumps(account), 200, content_type='application/json; charset=utf-8')
 
@@ -301,11 +303,21 @@ def items(environ, request):
 def items_new(environ, request):
     '''generates a new key for upload process.  Timeout after 60 minutes!
     
-    -- http://developer.getcloudapp.com/upload-file'''
+    -- http://developer.getcloudapp.com/upload-file
+    -- http://developer.getcloudapp.com/upload-file-with-specific-privacy'''
+    
+    acc = db.accounts.find_one({'email': request.authorization.username})
+    ParseResult = urlparse(request.url)
+    privacy = acc['private_items']
+    
+    if not ParseResult.query == '':
+        query = dict([part.split('=', 1) for part in ParseResult.query.split('&')])
+        privacy = 'private' if query['item[private]'] else 'public-read'
+    
     
     key = sessions.new(request.authorization.username)
     d = { "url": "http://my.cl.ly",
-          "params": { "acl":"public-read",
+          "params": { "acl": privacy,
                       "key": key
                     },
         }
@@ -324,6 +336,9 @@ def upload_file(environ, request):
     account = sessions.get(request.form.get('key'))['account']
     acc = db.accounts.find_one({'email': account})
     source = request.headers.get('User-Agent', 'Regenschirm++/1.0').split(' ', 1)[0]
+    privacy = request.form.get('acl', acc['private_items'])
+    if isinstance(privacy, (str, unicode)):
+        privacy = True if privacy == 'private' else False
     timestamp = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
     obj = request.files.get('file')
     if not obj:
@@ -340,7 +355,7 @@ def upload_file(environ, request):
             fs.put(obj, _id=_id ,filename=filename, created_at=timestamp,
                    content_type=obj.mimetype, account=account, view_counter=0,
                    short_id=gen(randint(3,8)), updated_at=timestamp,
-                   source=source, private=acc['private_items'])
+                   source=source, private=privacy)
             break
         except DuplicateKeyError:
             pass
@@ -353,7 +368,6 @@ def upload_file(environ, request):
     return Response(json.dumps(Item(obj)), content_type='application/json; charset=utf-8')
 
 
-@login
 def view_item(environ, request, short_id):
     '''Implements: View Item.  http://developer.getcloudapp.com/view-item.
     Only via `Accept: application/json` accessible, returns 404 Not Found, if
@@ -403,6 +417,8 @@ def modify_item(environ, request, objectid):
             item['filename'] = value
         else:
             item[key] = value
+        
+        item['updated_at'] = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
     
     db.items.save(item)
     item = fs.get(item['_id'])
