@@ -308,7 +308,7 @@ def items_new(environ, request):
     
     acc = db.accounts.find_one({'email': request.authorization.username})
     ParseResult = urlparse(request.url)
-    privacy = acc['private_items']
+    privacy = 'private' if acc['private_items'] else 'public-read'
     
     if not ParseResult.query == '':
         query = dict([part.split('=', 1) for part in ParseResult.query.split('&')])
