@@ -17,9 +17,9 @@ therefore you need [MongoDB](http://mongodb.org/) 1.6 or higher.
     # python2.5 users will need simplejson as well
     pip install simplejson
     
-To work as an alternative CloudApp-server, you have to edit their DNS *my.cl.ly*
-to your own IP in /etc/hosts. This will not interfere with CloudApp itself,
-because they're using *cl.ly* for sharing.
+To work as an alternative CloudApp-server, you have to edit their DNS
+*my.cl.ly* to your own IP in /etc/hosts. This will not interfere with
+CloudApp-Service itself, because they're using *cl.ly* for sharing.
 
     > cat conf.yaml
     hostname: my.cloud.org
@@ -31,8 +31,8 @@ because they're using *cl.ly* for sharing.
 
 ### Setup
 
-There are two different setups: serve on port 80 as HTTP server or use a proxy.
-For the next setp, I assume you'll host Regenwolken on *my.cloud.org*.
+There are two different setups: serve on port 80 as HTTP server or use a
+proxy. For the next setp, I assume you'll host Regenwolken on *my.cloud.org*.
       
 First start MongoDB via `mongod --dbpath path/to/some/folder` and edit your
 *local* (means, where you'll use Cloud.app) /etc/hosts (replace 127.0.0.1
@@ -49,7 +49,7 @@ with the desired IP):
 - finally launch Cloud.app, register and then log in
 
 - start MongoDB via `mongod --dbpath path/to/some/folder`
-- run `sudo python wolken.py [host]`
+- run `sudo python wolken.py`
 - edit /etc/hosts to
 - finally launch Cloud.app, register and then log in
 - take a test screenshot
@@ -86,51 +86,22 @@ ressource.
 ### API implementation
 
 Regenwolken provides all API calls to get Cloud.app working and has only few
-calls of [CloudApp's API](http://developer.getcloudapp.com/) missing.
-
-    # -H "Accept: application/json"
-
-    /                 - POST files
-    /items            - POST (multiple) bookmarks
-    /register         - POST register (instantly) new account
-    /<short_id>       - GET item details
-    /account          - GET account info
-    /account/stats    - GET overall file count and views
-    /items            - GET list of uploaded items
-    /items/new        - GET key for new upload
-    /items/<short_id> - PUT rename/recover/change privacy of item
-    /items/<short_id> - DELETE item
+calls of [CloudApp's API](http://developer.getcloudapp.com/) missing. See
+[API.md](/posativ/regenwolken/blob/master/doc/API.md) for a complete list of
+features. Below, the following are currently covered by the web interface.
     
     # -H "Accept: text/html"
     
     /              - GET "Hallo Welt!"
     /<short_id>    - GET file
     /-<short_id>   - GET redirect from bookmark
-    
-status codes used in Regenwolken:
 
-    200 Ok           - everything fine
-    201 Ok           - register was successfully
-    301 Redirect     - redirect instantly to new URL
-    400 Bad Request  - wrong json
-    401 Unauthorized - requires authentication
-    403 Unauthorized - authentication failure
-    404 Not Found    - short_id/_id is not found
-    406 User already exists - when /register-ing an alreay existing user
-    413 Request Entity Too Large - our size limit is 64 MiB
-    
-not implemented
+Thanks to [cmur2](https://github.com/cmur2) for his feature-rich
+[CLI](https://github.com/cmur2/cloudapp-cli) and help to build this service!
 
-    View Domain Details - because of it's different domain name.
-                          |- http://developer.getcloudapp.com/view-domain-details
-    Stream Items        - WTF is this? Don't need it. mplayer can stream.
-                          |- http://developer.getcloudapp.com/streaming-items
-    Gift cards          - not needed.
-                          |- http://developer.getcloudapp.com/redeem-gift-card
-                          |- http://developer.getcloudapp.com/view-gift-card
-     
-    
-### working clients
+### Clients
+
+#### working
 
 - Mac OS X [Cloud](http://itunes.apple.com/us/app/cloud/id417602904?mt=12&ls=1)
 - [cloudapp_api](https://github.com/aaronrussell/cloudapp_api) and cli frontend
@@ -139,7 +110,7 @@ not implemented
 - [Stratus](http://www.getstratusapp.com/) – CloudApp Client for iOS, but failing sometimes
 - [Cloudette](http://cloudetteapp.com/) – free CloudApp iPhone client, works flawlessly
 
-### failing clients
+#### failing clients
 
 - Windows' [FluffyApp](http://fluffyapp.com/), because their aren't using the API m(
 
