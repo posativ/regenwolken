@@ -166,7 +166,7 @@ def purge(conf, options, args):
     if options.account and not options.all and len(args) < 2:
         log.error('purge -a <_id> requires an account _id')
         sys.exit(1)
-    elif not options.account and not options.all:
+    elif not options.account and not options.all and len(args) < 2:
         log.error('purge <timedelta> requires a time delta')
         sys.exit(1)
     
@@ -235,6 +235,7 @@ def repair(conf, options):
         
         # 2. metadata is missing, but file is there. Recover possible, but not implemented #win
         for item in diff2:
+            print 'removing GridFS-File `%s`' % item
             objs.remove(item)
     
     # rebuild accounts items, when something changed
@@ -253,6 +254,7 @@ if __name__ == '__main__':
     usage = "usage: %prog [options] info|account|purge|repair\n" + '\n' \
             + "  info    – provides basic information of Regenwolken's MongoDB\n" \
             + "  account – details of given (email or _id) or --all accounts.\n" \
+            + "  files   – summary of uploaded files --all works, too.\n" \
             + "  purge   – purge -a account or files. --all works, too.\n" \
             + "  repair  – repair broken account-file relations in MongoDB"
 
@@ -289,3 +291,7 @@ if __name__ == '__main__':
         purge(conf, options, args)
     elif 'repair' in args:
         repair(conf, options)
+    elif 'files' in args:
+        pass
+    else:
+        parser.print_help()
