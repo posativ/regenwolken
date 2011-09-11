@@ -114,7 +114,7 @@ def account(conf, options, args):
                     # fail safe counting
                     size = 0
                     missing = []
-                    for i in acc['item']:
+                    for i in acc['items']:
                         if not fs.exists(i):
                             missing.append(i)
                         else:
