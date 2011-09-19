@@ -97,6 +97,7 @@ timeout after 60 minutes per default), your upload is valid.
     403 Unauthorized - authentication failure
     404 Not Found    - short_id/_id is not found
     406 User already exists - when /register-ing an alreay existing user
+    409 Conflict     - account not activated
     413 Request Entity Too Large - our size limit is 64 MiB
     
 ### HTTP Digest Authentication and salted passwords

@@ -65,7 +65,7 @@ def parse_authorization_header(value):
 class Wolkenrequest(Request):
     """fixing HTTP Digest Auth fallback"""
     # FIXME: Cloud.app can not handle 413 Request Entity Too Large
-    max_content_length = 1024 * 1024 * 64 # max. 64 mb request size
+    max_content_length = conf.MAX_CONTENT_LENGTH
     
     @cached_property
     def authorization(self):

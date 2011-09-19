@@ -42,9 +42,11 @@ class Config():
         self.PORT = 80
         self.MONGODB_HOST = "127.0.0.1"
         self.MONGODB_PORT = 27017
+        self.MONGODB_NAME = 'cloudapp'
         self.ALLOWED_CHARS = string.digits + string.ascii_letters + '.- @'
         self.MAX_CONTENT_LENGTH = 1024*1024*64
         self.ALLOW_PRIVATE_BOOKMARKS = False
+        self.PUBLIC_REGISTRATION = True
         for line in open('conf.yaml'):
             line = line.strip()
             if line and not line.startswith('#'):

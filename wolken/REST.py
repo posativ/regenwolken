@@ -30,7 +30,7 @@ from gridfs.errors import NoFile
 
 sessions = Sessions(timeout=3600)
 
-db = Connection(conf.MONGODB_HOST, conf.MONGODB_PORT)['cloudapp']
+db = Connection(conf.MONGODB_HOST, conf.MONGODB_PORT)[conf.MONGODB_NAME]
 
 from wolken.mongonic import GridFS
 fs = GridFS(db)
@@ -144,9 +144,9 @@ def prove_auth(req):
     """calculates  digest response (MD5 and qop)"""
     
     def A1(auth):
-        query = db.accounts.find({'email': auth.username})
-        if query.count() == 1:
-            passwd = query[0]['passwd']
+        account = db.accounts.find_one({'email': auth.username})
+        if account:
+            passwd = account['passwd']
         else:
             passwd = '%x' % getrandbits(256)
         return md5(auth.username + ':' + auth.realm + ':' + passwd)
@@ -181,8 +181,13 @@ def login(f):
             response.www_authenticate.set_digest('Application', nonce='%x' % getrandbits(128),
                         qop=('auth', ), opaque='%x' % getrandbits(128), algorithm='MD5')
             return response
-        elif prove_auth(req) != req.authorization.response:
-            return Response('Forbidden', 403)
+        else:
+            account = db.accounts.find_one({'email': req.authorization.username})
+            if account and account['activated_at'] == None:
+                return Response('[ "Your account hasn\'t been activated. Please ' \
+                                + 'check your email and activate your account." ]', 409)
+            elif prove_auth(req) != req.authorization.response:
+                return Response('Forbidden', 403)
         return f(env, req, *args, **kwargs)
     return dec
 
@@ -197,8 +202,6 @@ def account(environ, request):
     -- http://developer.getcloudapp.com/change-password"""
     
     account = db.accounts.find_one({'email': request.authorization.username})
-    if not account:
-        return Response('Not Found', 404)
     
     if request.method == 'GET':
         pass
@@ -485,6 +488,7 @@ def register(environ, request):
     try:
         d = json.loads(request.data)
         email = d['user']['email']
+        if email[0].isdigit(): raise ValueError
         passwd = d['user']['password']
     except (ValueError, KeyError):
         return Response('Bad Request', 400)
@@ -493,11 +497,18 @@ def register(environ, request):
     if filter(lambda c: not c in conf.ALLOWED_CHARS, email):
         return Response('Bad Request', 400)
     
-    if db.accounts.find({'email': email}).count() > 0:
+    if db.accounts.find_one({'email': email}) != None:
         return Response('User already exists', 406)
+        
+    if not db.accounts.find_one({"_id":"autoinc"}):
+        db.accounts.insert({"_id":"_inc", "seq": 1})
     
-    account = Account({'email': email, 'passwd': passwd, 'id': db.accounts.count()+1},
-                      activated_at=strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()))
+    account = Account({'email': email, 'passwd': passwd,
+                       'id': db.accounts.find_one({'_id': '_inc'})['seq']})
+    db.accounts.find_and_modify({'_id': '_inc'}, {'$inc': {'seq': 1}})
+    if conf.PUBLIC_REGISTRATION:
+        account['activated_at'] = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
+    
     account['_id'] = account['id']
     db.accounts.insert(account)
     del account['_id']; del account['items']; del account['passwd']

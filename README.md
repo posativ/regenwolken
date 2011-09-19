@@ -62,7 +62,7 @@ your /etc/lighttpd/lighttpd.conf to something like this:
         
         # some other stuff related to cloud.org
         
-        $HTTP["host"] =~ "my.cloud.org|my.cl.ly|" {
+        $HTTP["host"] =~ "my.cloud.org|my.cl.ly" {
             proxy.server = ("" =>
                (("host" => "127.0.0.1", "port" => 9000)))
         }

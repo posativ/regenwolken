@@ -29,6 +29,7 @@ import string
 import re
 
 from datetime import timedelta, datetime
+from time import strftime, gmtime
 
 from pymongo import Connection
 from gridfs import GridFS
@@ -88,20 +89,23 @@ def parse_conf(fp):
 
 
 def account(conf, options, args):
+    '''View details or summary of all accounts.'''
     
     con = Connection(conf['MONGODB_HOST'], conf['MONGODB_PORT'])
-    db = con['cloudapp']
+    db = con[conf['MONGODB_NAME']]
     fs = GridFS(db)
     
     if options.all:
         query = None
     elif len(args) == 2:
-        query = {'_id': args[1]} if args[1].isdigit() else {'email': args[1]}
+        query = {'_id': int(args[1])} if args[1].isdigit() else {'email': args[1]}
     else:
-        log.error('accounts <email or _id> requires a valid email or _id')
+        log.error('account <email or _id> requires a valid email or _id')
         sys.exit(1)
 
     for acc in db.accounts.find(query):
+        if str(acc['_id']).startswith('_'):
+            continue
         print '%s [id:%s]' % (acc['email'], acc['id'])
         for key in acc:
             if key in ['email', '_id', 'id']:
@@ -121,21 +125,48 @@ def account(conf, options, args):
                             size += fs.get(i).length
                 print'    size: %s' % ppsize(size)
             print '    %s: %s' % (key, acc[key])
-    if options.all:  print db.accounts.count(), 'accounts total'
+    if options.all:  print db.accounts.count()-1, 'accounts total'
     con.disconnect()
 
+
+def activate(conf, options, args):
+    '''When PUBLIC_REGISTRATION is set to false, you have to activate
+    registered accounts manually by invoking "activate $email"'''
+    
+    con = Connection(conf['MONGODB_HOST'], conf['MONGODB_PORT'])
+    accounts = con[conf['MONGODB_NAME']].accounts
+    
+    if len(args) == 2:
+        acc = accounts.find_one({'email': args[1]})
+        if not acc:
+            print '`%s` does not exist' % args[1]
+            sys.exit(1)
+        elif acc['activated_at'] != None:
+            print '`%s` already activated' % args[1]
+        else:
+            act = {'activated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())}
+            accounts.update({'_id': acc['_id']}, {'$set': act})
+            print '`%s` activated' % args[1]
+    else:
+        inactivated = [acc for acc in accounts.find() if acc['activated_at'] == None]
+        if not inactivated:
+            print 'no pending inactive accounts'
+        for acc in inactivated:
+            print '%s [%s]' % (acc['email'].ljust(16), acc['created_at'])
+    
+    con.disconnect()
 
 def info(conf):
     '''A basic, incomplete short info.  Displays overall file size and
     account counts.'''
     
     con = Connection(conf['MONGODB_HOST'], conf['MONGODB_PORT'])
-    db = con['cloudapp']
+    db = con[conf['MONGODB_NAME']]
     fs = GridFS(db)
     
     overall_file_size = sum([f['length'] for f in fs._GridFS__files.find()])
     print fs._GridFS__files.count(), 'files [%s]' % ppsize(overall_file_size)
-    print db.accounts.count(), 'accounts total'
+    print db.accounts.count()-1, 'accounts total'
     
     con.disconnect()
     
@@ -149,13 +180,13 @@ def purge(conf, options, args):
     than 3 days including its metadata. To delete all files write `0d` or --all.'''
 
     con = Connection(conf['MONGODB_HOST'], conf['MONGODB_PORT'])
-    db = con['cloudapp']
+    db = con[conf['MONGODB_NAME']]
     fs = GridFS(db)
     
     def delete_account(_id):
         """deletes account with _id and all his files"""
         
-        items = db.accounts.find_one(_id)['items']
+        items = db.accounts.find_one({'_id': _id})['items']
         db.accounts.remove(_id)
         
         for item in items:
@@ -164,7 +195,7 @@ def purge(conf, options, args):
         return True
         
     if options.account and not options.all and len(args) < 2:
-        log.error('purge -a <_id> requires an account _id')
+        log.error('purge -a <_id> requires an account _id or email')
         sys.exit(1)
     elif not options.account and not options.all and len(args) < 2:
         log.error('purge <timedelta> requires a time delta')
@@ -179,10 +210,14 @@ def purge(conf, options, args):
             for acc in db.accounts.find():
                 delete_account(acc['_id'])
         else:
-            if not db.accounts.find_one(args[1]):
-                log.error('no such _id `%s`', args[1])
+            query = {'_id': int(args[1])} if args[1].isdigit() else {'email': args[1]}
+            query = db.accounts.find_one(query)
+            
+            if not query:
+                log.error('no such _id or email `%s`', args[1])
                 sys.exit(1)
-            delete_account(args[1])
+            print 'deleting account `%s`' % args[1]
+            delete_account(query['_id'])
     else:
         delta = timedelta(0) if options.all else tdelta(args[1])
         if delta == timedelta(0):
@@ -219,7 +254,7 @@ def repair(conf, options):
     item links are detected and automatically removed.'''
 
     con = Connection(conf['MONGODB_HOST'], conf['MONGODB_PORT'])
-    db = con['cloudapp']
+    db = con[conf['MONGODB_NAME']]
     fs = GridFS(db)
     
     objs = [obj['_id'] for obj in fs._GridFS__files.find()]
@@ -251,12 +286,13 @@ if __name__ == '__main__':
     
     from optparse import OptionParser, make_option
     
-    usage = "usage: %prog [options] info|account|purge|repair\n" + '\n' \
-            + "  info    – provides basic information of Regenwolken's MongoDB\n" \
-            + "  account – details of given (email or _id) or --all accounts.\n" \
-            + "  files   – summary of uploaded files --all works, too.\n" \
-            + "  purge   – purge -a account or files. --all works, too.\n" \
-            + "  repair  – repair broken account-file relations in MongoDB"
+    usage = "usage: %prog [options] info|account|activate|purge|repair\n" + '\n' \
+            + "  info     – provides basic information of Regenwolken's MongoDB\n" \
+            + "  activate – lists inactive accounts or activates given email\n" \
+            + "  account  – details of given (email or _id) or --all accounts\n" \
+            + "  files    – summary of uploaded files --all works, too\n" \
+            + "  purge    – purge -a account or files. --all works, too\n" \
+            + "  repair   – repair broken account-file relations in MongoDB"
 
     options = [
         make_option('-a', '--account', dest='account', action='store_true',
@@ -283,10 +319,12 @@ if __name__ == '__main__':
     
     conf = parse_conf(f)
     
-    if 'account' in args:
-        account(conf, options, args)
-    elif 'info' in args:
+    if 'info' in args:
         info(conf)
+    elif 'account' in args:
+        account(conf, options, args)
+    elif 'activate' in args:
+        activate(conf, options, args)
     elif 'purge' in args:
         purge(conf, options, args)
     elif 'repair' in args:
