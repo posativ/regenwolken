@@ -22,6 +22,7 @@
 __version__ = "0.2"
 
 import sys; reload(sys)
+from os.path import join, dirname
 sys.setdefaultencoding('utf-8')
 
 from werkzeug.wrappers import Request
@@ -75,6 +76,8 @@ class Wolkenrequest(Request):
 
 HTML_map = Map([
     Rule('/', endpoint=web.index),
+    Rule('/login', endpoint=web.login_page, methods=['GET', 'HEAD']),
+    Rule('/login', endpoint=web.login, methods=['POST']),
     Rule('/-<short_id>', endpoint=web.redirect),
     Rule('/<short_id>', endpoint=web.show),
 ])
@@ -108,6 +111,14 @@ def application(environ, start_response):
 
 
 if __name__ == '__main__':
-    from werkzeug.serving import run_simple    
+    from werkzeug.serving import run_simple
+    from werkzeug import SharedDataMiddleware
+    
+    if True:
+        app = SharedDataMiddleware(application, {
+            '/static/': join(dirname(__file__), 'wolken/static')
+        })
+    
+    
     run_simple(conf.BIND_ADDRESS, conf.PORT,
-               application, use_reloader=True)
+               app, use_reloader=True)

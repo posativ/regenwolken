@@ -12,6 +12,9 @@ from wolken.mongonic import GridFS
 from pymongo import Connection
 from gridfs.errors import NoFile
 
+from jinja2 import Environment, PackageLoader
+jinenv = Environment(loader=PackageLoader('wolken', 'layouts'))
+
 from wolken.REST import prove_auth
 
 db = Connection(conf.MONGODB_HOST, conf.MONGODB_PORT)['cloudapp']
@@ -46,9 +49,20 @@ def private(f):
 def index(environ, response):
     """my.cl.ly/"""
     
-    body = '<h1>Hallo Welt</h1>'
     
-    return Response(body, 200, content_type='text/html')
+    tt = jinenv.get_template('index.html')
+    
+    return Response(tt.render(), 200, content_type='text/html')
+    
+def login_page(environ, response):
+    
+    tt = jinenv.get_template('login.html')
+    return Response(tt.render(), 200, content_type='text/html')
+
+
+def login(environ, response):
+    
+    return Response('See there', 301, headers={'Location': '/'})
 
 
 @private

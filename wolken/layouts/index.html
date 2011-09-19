@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block body %}
+    <script>
+    $(document).ready(function doIt() {
+        for (var i=0; i<10; i++) {
+            $('#items').append('<li>' + (i+1) + '</li>');
+        }
+        
+        $.ajaxSetup({
+            headers: {'Accept': "application/json"},
+            type: "GET",
+            dataType: "json"
+        });
+        
+        var details = $.ajax({
+            url: "/o9kkl8x",
+            async: false,
+            success: function(msg) {
+                var a = $('<a/>', {href: msg.url, text: msg.name})
+                $('#items').append(a.wrap('<li></li>').parent())
+            }
+        })
+        
+    });
+    </script>
+    <ul id="items">
+    </ul>
+{% endblock %}
