@@ -177,12 +177,12 @@ def login(f):
         """This decorater function will send an authenticate header, if none
         is present and denies access, if HTTP Digest Auth failed."""
         if not req.authorization:
-            response = Response(status=401)
+            response = Response('Unauthorized', 401)
             response.www_authenticate.set_digest('Application', nonce='%x' % getrandbits(128),
                         qop=('auth', ), opaque='%x' % getrandbits(128), algorithm='MD5')
             return response
         elif prove_auth(req) != req.authorization.response:
-            return Response('Unauthorized.', 403)
+            return Response('Forbidden', 403)
         return f(env, req, *args, **kwargs)
     return dec
 
@@ -198,7 +198,7 @@ def account(environ, request):
     
     account = db.accounts.find_one({'email': request.authorization.username})
     if not account:
-        return Response('Not found.', 404)
+        return Response('Not Found', 404)
     
     if request.method == 'GET':
         pass
@@ -207,28 +207,28 @@ def account(environ, request):
             _id = account['_id']
             data = json.loads(request.data)['user']
         except ValueError:
-            return Response('Unprocessable Entity.', 422)            
+            return Response('Unprocessable Entity', 422)            
         
         if len(data.keys()) == 1 and 'private_items' in data:
             db.accounts.update({'_id': _id}, {'$set': {'private_items': data['private_items']}})
             account['private_items'] = data['private_items']
         elif len(data.keys()) == 2 and 'current_password' in data:
             if not account['passwd'] == data['current_password']:
-                return Response('Wrong password!', 403)
+                return Response('Forbidden', 403)
             
             if data.has_key('email'):
                 if filter(lambda c: not c in conf.ALLOWED_CHARS, data['email']):
-                    return Response('Bad Request.', 400)
+                    return Response('Bad Request', 400)
                 if db.accounts.find_one({'email': data['email']}) and \
                 account['email'] != data['email']:
-                    return Response('User already exists.', 406)
+                    return Response('User already exists', 406)
                 db.accounts.update({'_id': _id}, {'$set': {'email': data['email']}})
                 account['email'] = data['email']
             elif data.has_key('password'):
                 db.accounts.update({'_id': _id}, {'$set': {'passwd': data['password']}})
                 account['passwd'] = data['password']
             else:
-                 return Response('Bad Request.', 400)
+                 return Response('Bad Request', 400)
     
     db.accounts.update({'_id': account['_id']}, {'$set':
             {'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())}})
@@ -279,7 +279,7 @@ def items(environ, request):
         page = int(params['page'])
         email = request.authorization.username
     except (ValueError, KeyError):
-        return Response('Bad Request.', 400)
+        return Response('Bad Request', 400)
     
     query = {'account': email}
     if params['type'] != None:
@@ -329,7 +329,7 @@ def upload_file(environ, request):
     -- http://developer.getcloudapp.com/upload-file'''
     
     if not request.form.get('key') in sessions:
-        return Response('Unauthorized.', 403)
+        return Response('Forbidden', 403)
     
     account = sessions.get(request.form.get('key'))['account']
     acc = db.accounts.find_one({'email': account})
@@ -340,7 +340,7 @@ def upload_file(environ, request):
     timestamp = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
     obj = request.files.get('file')
     if not obj:
-        return Response('Bad Request.', 400)
+        return Response('Bad Request', 400)
     
     while True:
         _id = gen(12, charset=string.digits)
@@ -376,13 +376,13 @@ def view_item(environ, request, short_id):
     if short_id.startswith('-'):
         cur = db.items.find_one({'short_id': short_id})
         if not cur:
-            return Response('Item not found!', 404)
+            return Response('Not Found', 404)
         x = Item(cur)
     else:
         try:
             obj = fs.get(short_id=short_id)
         except NoFile:
-            return Response('File not found!', 404)
+            return Response('Not Found', 404)
         x = Item(obj)
              
     return Response(json.dumps(x), 200, content_type='application/json; charset=utf-8')
@@ -399,7 +399,7 @@ def modify_item(environ, request, objectid):
     item = db.items.find_one({'account': request.authorization.username,
                               '_id': objectid})
     if not item:
-        return Response('Not found.', 404)
+        return Response('Not Found', 404)
     
     if request.method == 'DELETE':
         item['deleted_at'] = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
@@ -409,7 +409,7 @@ def modify_item(environ, request, objectid):
             key, value = data.items()[0]
             if not key in ['private', 'name', 'deleted_at']: raise ValueError
         except ValueError:
-            return Response('Unprocessable Entity.', 422)
+            return Response('Unprocessable Entity', 422)
 
         if key == 'name' and item['item_type'] != 'bookmark':
             item['filename'] = value
@@ -464,7 +464,7 @@ def bookmark(environ, request):
         data = json.loads(request.data)
         data = data['item']
     except (ValueError, KeyError):
-        return Response('Unprocessable Entity.', 422)
+        return Response('Unprocessable Entity', 422)
         
     if isinstance(data, list):
         L = [insert(d['name'], d['redirect_url']) for d in data]
@@ -487,14 +487,14 @@ def register(environ, request):
         email = d['user']['email']
         passwd = d['user']['password']
     except (ValueError, KeyError):
-        return Response('Bad Request.', 400)
+        return Response('Bad Request', 400)
     
     # TODO: allow more characters, unicode -> ascii, before filter
     if filter(lambda c: not c in conf.ALLOWED_CHARS, email):
-        return Response('Bad Request.', 400)
+        return Response('Bad Request', 400)
     
     if db.accounts.find({'email': email}).count() > 0:
-        return Response('User already exists.', 406)
+        return Response('User already exists', 406)
     
     account = Account({'email': email, 'passwd': passwd, 'id': db.accounts.count()+1},
                       activated_at=strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()))
