@@ -199,7 +199,10 @@ def account(environ, request):
     -- http://developer.getcloudapp.com/view-account-details
     -- http://developer.getcloudapp.com/change-default-security
     -- http://developer.getcloudapp.com/change-email
-    -- http://developer.getcloudapp.com/change-password"""
+    -- http://developer.getcloudapp.com/change-password
+    
+    PUT: accepts every new password (stored in plaintext) and like /register
+    no digit-only "email" address is allowed."""
     
     account = db.accounts.find_one({'email': request.authorization.username})
     
@@ -210,7 +213,7 @@ def account(environ, request):
             _id = account['_id']
             data = json.loads(request.data)['user']
         except ValueError:
-            return Response('Unprocessable Entity', 422)            
+            return Response('Unprocessable Entity', 422)
         
         if len(data.keys()) == 1 and 'private_items' in data:
             db.accounts.update({'_id': _id}, {'$set': {'private_items': data['private_items']}})
@@ -220,18 +223,22 @@ def account(environ, request):
                 return Response('Forbidden', 403)
             
             if data.has_key('email'):
-                if filter(lambda c: not c in conf.ALLOWED_CHARS, data['email']):
+                if filter(lambda c: not c in conf.ALLOWED_CHARS, data['email']) \
+                or data['email'].isdigit(): # no numbers allowed
                     return Response('Bad Request', 400)
                 if db.accounts.find_one({'email': data['email']}) and \
                 account['email'] != data['email']:
                     return Response('User already exists', 406)
+                
                 db.accounts.update({'_id': _id}, {'$set': {'email': data['email']}})
                 account['email'] = data['email']
+                
             elif data.has_key('password'):
                 db.accounts.update({'_id': _id}, {'$set': {'passwd': data['password']}})
                 account['passwd'] = data['password']
+                
             else:
-                 return Response('Bad Request', 400)
+                return Response('Bad Request', 400)
     
     db.accounts.update({'_id': account['_id']}, {'$set':
             {'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())}})
@@ -244,7 +251,6 @@ def account_stats(environ, request):
     '''view account's item count and overall views.
     
     -- http://developer.getcloudapp.com/view-account-stats'''
-    
     
     email = request.authorization.username
     items = db.accounts.find_one({'email': email})['items']
@@ -479,7 +485,7 @@ def bookmark(environ, request):
 
 def register(environ, request):
     """Allows (instant) registration of new users.  Invokes Account() and
-    is saved directly into database.
+    is saved directly into database. No digits-only usernames are allowed.
     
     -- http://developer.getcloudapp.com/register"""
     
@@ -488,7 +494,7 @@ def register(environ, request):
     try:
         d = json.loads(request.data)
         email = d['user']['email']
-        if email[0].isdigit(): raise ValueError
+        if email.isdigit(): raise ValueError # no numbers as username allowed
         passwd = d['user']['password']
     except (ValueError, KeyError):
         return Response('Bad Request', 400)

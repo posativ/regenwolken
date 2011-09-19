@@ -58,6 +58,7 @@ def tdelta(input):
     
 
 def parse_conf(fp):
+    '''parsing conf.yaml'''
 
     __dict__ = {
         'HOSTNAME': "localhost",
@@ -68,6 +69,7 @@ def parse_conf(fp):
         'ALLOWED_CHARS': string.digits + string.ascii_letters + '.- @',
         'MAX_CONTENT_LENGTH': 1024*1024*64,
         'ALLOW_PRIVATE_BOOKMARKS': False,
+        'PUBLIC_REGISTRATION': False,
     }
     for line in fp:
         line = line.strip()
@@ -125,7 +127,8 @@ def account(conf, options, args):
                             size += fs.get(i).length
                 print'    size: %s' % ppsize(size)
             print '    %s: %s' % (key, acc[key])
-    if options.all:  print db.accounts.count()-1, 'accounts total'
+    if options.all:  print db.accounts.count()-1, 'accounts total' # -1 for _autoinc
+    
     con.disconnect()
 
 
@@ -148,9 +151,9 @@ def activate(conf, options, args):
             accounts.update({'_id': acc['_id']}, {'$set': act})
             print '`%s` activated' % args[1]
     else:
-        inactivated = [acc for acc in accounts.find() if acc['activated_at'] == None]
+        inactivated = [acc for acc in accounts.find() if not acc.get('activated_at', True)]
         if not inactivated:
-            print 'no pending inactive accounts'
+            print 'no pending non-activated accounts'
         for acc in inactivated:
             print '%s [%s]' % (acc['email'].ljust(16), acc['created_at'])
     
@@ -165,8 +168,9 @@ def info(conf):
     fs = GridFS(db)
     
     overall_file_size = sum([f['length'] for f in fs._GridFS__files.find()])
+    inactivated = [acc for acc in db.accounts.find() if not acc.get('activated_at', True)]
     print fs._GridFS__files.count(), 'files [%s]' % ppsize(overall_file_size)
-    print db.accounts.count()-1, 'accounts total'
+    print db.accounts.count()-1, 'accounts total,', len(inactivated) , 'not activated'
     
     con.disconnect()
     
@@ -230,7 +234,7 @@ def purge(conf, options, args):
         now = datetime.utcnow()
         delete = []
         for obj in fs._GridFS__files.find():
-            if now - delta  > obj['uploadDate']:
+            if now - delta > obj['uploadDate']:
                 delete.append(obj)
         
         for cur in db.accounts.find():
