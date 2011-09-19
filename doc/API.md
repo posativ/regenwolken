@@ -62,9 +62,9 @@ using their sparse documentation details, there is one major point,
 Regenwolken handles different: private and public items. CloudApp *thinks*,
 items are private, when they have a longer hash. That's no joke, that's their
 current implementation. When you upload a file without privacy hint, it tries
-to get the hash as short as possible, e.g. `cl.ly/5hd`. When you make this
+to get the hash as short as possible, e.g. [cl.ly/5hd](). When you make this
 item private, the hash will change in something like this
-`cl.ly/29xgnqa49ny84jg83l`. This is *security by obscurity*. In Regenwolken,
+[cl.ly/29xgnqa49ny84jg83l](). This is *security by obscurity*. In Regenwolken,
 your private items requires authentication. Only when you know the
 credentials, you have access to your private data.
 
@@ -98,6 +98,12 @@ timeout after 60 minutes per default), your upload is valid.
     404 Not Found    - short_id/_id is not found
     406 User already exists - when /register-ing an alreay existing user
     413 Request Entity Too Large - our size limit is 64 MiB
+    
+### HTTP Digest Authentication and salted passwords
+
+CloudApp Network stores the users' password as plain text. This is the
+main dis-advantage of HTTP Digest Auth, which requires access to the plain
+password to generate proper hashes sent over the internet.
 
 [1]: http://getcloudapp.com/
 [2]: http://heise.de/
