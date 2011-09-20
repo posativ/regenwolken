@@ -210,8 +210,10 @@ def purge(conf, options, args):
             yn = raw_input('delete all accounts? [y/n] ')
             if yn != 'y':
                 sys.exit(0)
-            print 'deleting %s accounts' % db.accounts.count()
+            print 'deleting %s accounts' % (db.accounts.count() - 1)
             for acc in db.accounts.find():
+                if str(acc['_id']).startswith('_'):
+                    continue
                 delete_account(acc['_id'])
         else:
             query = {'_id': int(args[1])} if args[1].isdigit() else {'email': args[1]}
@@ -238,6 +240,8 @@ def purge(conf, options, args):
                 delete.append(obj)
         
         for cur in db.accounts.find():
+            if str(cur['_id']).startswith('_'):
+                continue
             _id, items = cur['_id'], cur['items']
             for obj in delete:
                 try:
@@ -279,6 +283,8 @@ def repair(conf, options):
     
     # rebuild accounts items, when something changed
     for cur in db.accounts.find():
+        if str(cur['_id']).startswith('_'):
+            continue
         _id, items = cur['_id'], cur['items']
         items = filter(lambda i: i in objs, items)
         db.accounts.update({'_id': _id}, {'$set': {'items': items}})
