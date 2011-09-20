@@ -100,11 +100,12 @@ timeout after 60 minutes per default), your upload is valid.
     409 Conflict     - account not activated
     413 Request Entity Too Large - our size limit is 64 MiB
     
-### HTTP Digest Authentication and salted passwords
+### HTTP Digest Authentication
 
-CloudApp Network stores the users' password as plain text. This is the
-main dis-advantage of HTTP Digest Auth, which requires access to the plain
-password to generate proper hashes sent over the internet.
+CloudApp Network uses digest authentication to prevent sending passwords as
+plain text over the air. This requires either storing passwords as plaintext
+or as A1 hash (see https://tools.ietf.org/html/rfc2069). Regenwolken uses the
+last option, salting passwords with username+realm.
 
 [1]: http://getcloudapp.com/
 [2]: http://heise.de/
