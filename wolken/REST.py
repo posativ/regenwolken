@@ -9,7 +9,9 @@
 
 __version__ = "0.2"
 
-from random import getrandbits, choice, randint
+from os import urandom
+from random import choice, randint, getrandbits
+from base64 import standard_b64encode
 from urlparse import urlparse
 from urllib import unquote
 from time import strftime, gmtime
@@ -113,7 +115,7 @@ def Account(account, **kw):
         items:            (not official) list of items by this account
         email:            username of this account, characters can be any
                           of "a-zA-Z0-9.- @"
-        password:         cleartext password TODO: hashing
+        password:         password, md5(username + ':' + realm + ':' + passwd)
     """
     
     x = {
@@ -129,7 +131,7 @@ def Account(account, **kw):
         'activated_at': None,
         "items": [],
         'email': account['email'],
-        'passwd': account['passwd']
+        'passwd': A1(account['email'], account['passwd'])
     }
     
     x.update(kw)
@@ -139,27 +141,26 @@ def Account(account, **kw):
 def md5(data):
     """returns md5 of data has hexdigest"""
     return hashlib.md5(data).hexdigest()
+    
+def A1(username, passwd, realm='Application'):
+    """A1 HTTP Digest Authentication"""
+    return md5(username + ':' + realm + ':' + passwd)
 
 def prove_auth(req):
-    """calculates  digest response (MD5 and qop)"""
-    
-    def A1(auth):
-        account = db.accounts.find_one({'email': auth.username})
-        if account:
-            passwd = account['passwd']
-        else:
-            passwd = '%x' % getrandbits(256)
-        return md5(auth.username + ':' + auth.realm + ':' + passwd)
-        
+    """calculates  digest response (MD5 and qop)"""        
     auth = req.authorization
+    
+    account = db.accounts.find_one({'email': auth.username})
+    _A1 = account['passwd'] if account else standard_b64encode(urandom(16))
+    
     if str(auth.get('qop', '')) == 'auth':
         A2 = ':'.join([auth.nonce, auth.nc, auth.cnonce, 'auth',
                        md5(req.method + ':' + auth.uri)])
-        return md5(A1(auth) + ':' + A2)
+        return md5(_A1 + ':' + A2)
     else:
         # compatibility with RFC 2069: https://tools.ietf.org/html/rfc2069
         A2 = ':'.join([auth.nonce, md5(req.method + ':' + auth.uri)])
-        return md5(A1(auth) + ':' + A2)
+        return md5(_A1 + ':' + A2)
 
 
 def gen(length=8, charset=string.ascii_lowercase+string.digits):
@@ -177,8 +178,8 @@ def login(f):
         """This decorater function will send an authenticate header, if none
         is present and denies access, if HTTP Digest Auth failed."""
         if not req.authorization:
-            response = Response('Unauthorized', 401)
-            response.www_authenticate.set_digest('Application', nonce='%x' % getrandbits(128),
+            response = Response('Unauthorized', 401, content_type='application/json; charset=utf-8')
+            response.www_authenticate.set_digest('Application', nonce=standard_b64encode(urandom(32)),
                         qop=('auth', ), opaque='%x' % getrandbits(128), algorithm='MD5')
             return response
         else:
@@ -219,7 +220,7 @@ def account(environ, request):
             db.accounts.update({'_id': _id}, {'$set': {'private_items': data['private_items']}})
             account['private_items'] = data['private_items']
         elif len(data.keys()) == 2 and 'current_password' in data:
-            if not account['passwd'] == data['current_password']:
+            if not account['passwd'] == A1(account['email'], data['current_password']):
                 return Response('Forbidden', 403)
             
             if data.has_key('email'):
@@ -230,12 +231,16 @@ def account(environ, request):
                 account['email'] != data['email']:
                     return Response('User already exists', 406)
                 
-                db.accounts.update({'_id': _id}, {'$set': {'email': data['email']}})
-                account['email'] = data['email']
+                new = {'email': data['email'],
+                       'passwd': A1(data['email'], data['current_password'])}
+                db.accounts.update({'_id': _id}, {'$set': new})
+                account['email'] = new['email']
+                account['passwd'] = new['passwd']
                 
             elif data.has_key('password'):
-                db.accounts.update({'_id': _id}, {'$set': {'passwd': data['password']}})
-                account['passwd'] = data['password']
+                passwd = A1(account['email'], data['password'])
+                db.accounts.update({'_id': _id}, {'$set': {'passwd': passwd}})
+                account['passwd'] = passwd
                 
             else:
                 return Response('Bad Request', 400)
