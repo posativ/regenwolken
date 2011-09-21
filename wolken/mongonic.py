@@ -69,4 +69,4 @@ class GridFS:
         
     def inc_count(self, _id):
         '''find and increase view_counter'''
-        self.mdb.find_and_modify({'_id': _id}, {'$inc': {'view_counter': 1}})
+        self.mdb.update({'_id': _id}, {'$inc': {'view_counter': 1}})

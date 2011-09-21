@@ -540,7 +540,7 @@ def register(environ, request):
 
     account = Account({'email': email, 'passwd': passwd,
                        'id': db.accounts.find_one({'_id': '_inc'})['seq']})
-    db.accounts.find_and_modify({'_id': '_inc'}, {'$inc': {'seq': 1}})
+    db.accounts.update({'_id': '_inc'}, {'$inc': {'seq': 1}})
     if conf.PUBLIC_REGISTRATION:
         account['activated_at'] = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
 
