@@ -368,7 +368,7 @@ def upload_file(environ, request):
 
     _id = str(getrandbits(32))
     retry_count = 3
-    short_id_length = 4
+    short_id_length = conf.SHORT_ID_MIN_LENGTH
     while True:
         try:
             fs.put(obj, _id=_id ,filename=filename, created_at=timestamp,
@@ -462,7 +462,7 @@ def bookmark(environ, request):
 
         _id = str(getrandbits(32))
         retry_count = 1
-        short_id_length = 4
+        short_id_length = conf.SHORT_ID_MIN_LENGTH
 
         while True:
             short_id = gen(short_id_length)

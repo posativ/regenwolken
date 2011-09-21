@@ -20,6 +20,7 @@ current default conf.yaml:
     allowed_chars: 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.- @
     allow_private_bookmarks: false
     public_registration: false
+    short_id_min_length: 3
 
 hostname
     only used (and important) for URL generation to point to your own server
@@ -38,7 +39,8 @@ mongodb_name
     MongoDB database name to use.
 
 max_content_length
-    global maximum request size before 413 Request Entity Too Large is returned.
+    global maximum request size before 413 Request Entity Too Large is
+    returned, default: 64 megabytes.
 allowed_chars
     allowed chars in email address.
 allow_private_bookmarks
@@ -47,6 +49,10 @@ allow_private_bookmarks
 public_registration
     allow instant registration of accounts. If set to false, you have to
     manually activate accounts using ``bin/manage.py activate $email``
+short_id_min_length
+    minimum length of the short_id link (e.g. http://example.org/af3d). Retries
+    three times to generate a non-existing random id before length
+    is incremented by 1.
 
 
 bin/manage.py

@@ -39,6 +39,7 @@ class Config():
         self.MAX_CONTENT_LENGTH = 1024*1024*64
         self.ALLOW_PRIVATE_BOOKMARKS = False
         self.PUBLIC_REGISTRATION = False
+        self.SHORT_ID_MIN_LENGTH = 3
         for line in open('conf.yaml'):
             line = line.strip()
             if line and not line.startswith('#'):
