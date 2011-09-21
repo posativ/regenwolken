@@ -19,7 +19,7 @@
 #
 # Regenwolken is a CloudApp clone, with leave the cloud in mind.
 
-__version__ = "0.2"
+__version__ = "0.3"
 
 import sys; reload(sys)
 from os.path import join, dirname
@@ -66,7 +66,7 @@ class Wolkenrequest(Request):
     """fixing HTTP Digest Auth fallback"""
     # FIXME: Cloud.app can not handle 413 Request Entity Too Large
     max_content_length = conf.MAX_CONTENT_LENGTH
-    
+
     @cached_property
     def authorization(self):
         """The `Authorization` object in parsed form."""
@@ -96,10 +96,10 @@ REST_map = Map([
 
 @responder
 def application(environ, start_response):
-    
-    environ['SERVER_SOFTWARE'] = "Regenwolken/%s" % __version__
+
+    environ['SERVER_SOFTWARE'] = "Regenwolken/%s" % __version__ # FIXME doesn't work
     request = Wolkenrequest(environ)
-    
+
     if request.headers.get('Accept', 'application/json') == 'application/json':
         urls = REST_map.bind_to_environ(environ)
     else:
@@ -112,12 +112,12 @@ def application(environ, start_response):
 if __name__ == '__main__':
     from werkzeug.serving import run_simple
     from werkzeug import SharedDataMiddleware
-    
+
     if True:
         app = SharedDataMiddleware(application, {
             '/static/': join(dirname(__file__), 'wolken/static')
         })
-    
-    
+
+
     run_simple(conf.BIND_ADDRESS, conf.PORT,
                app, use_reloader=True)

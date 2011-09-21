@@ -19,7 +19,7 @@
 #
 # Regenwolken is a CloudApp clone, with leave the cloud in mind.
 
-__version__ = "0.2"
+__version__ = "0.3"
 
 import sys; reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -240,6 +240,7 @@ def purge(conf, options, args):
                 delete.append(obj)
         
         for cur in db.accounts.find():
+            # FIXME bookmarks survive
             if str(cur['_id']).startswith('_'):
                 continue
             _id, items = cur['_id'], cur['items']
