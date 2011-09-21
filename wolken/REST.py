@@ -526,11 +526,11 @@ def register(environ, request):
         if email.isdigit(): raise ValueError # no numbers as username allowed
         passwd = d['user']['password']
     except (ValueError, KeyError):
-        return Response('Bad Request', 400)
+        return Response('Bad Request', 422)
 
     # TODO: allow more characters, unicode -> ascii, before filter
     if filter(lambda c: not c in conf.ALLOWED_CHARS, email):
-        return Response('Bad Request', 400)
+        return Response('Bad Request', 422)
 
     if db.accounts.find_one({'email': email}) != None:
         return Response('User already exists', 406)

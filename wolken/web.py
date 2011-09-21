@@ -82,7 +82,7 @@ def show(environ, request, short_id):
         return Response('Not Found', 404)
 
     if f.item_type == 'bookmark':
-        return Response('Moved Permanently', 301,
+        return Response('Moved Temporarily', 302,
                     headers={'Location': f.redirect_url})
     elif not f.content_type.split('/', 1)[0] in ['image', 'text']:
         return Response(f, content_type=f.content_type, headers={'Content-Disposition':

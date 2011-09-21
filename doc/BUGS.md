@@ -22,7 +22,13 @@ Bugs:
     - /register: HTTP 201 -> success, but there is no way, to indicate, what
       could be wrong with the current username (exists e.g.)
     - Cloud.app can not handle 413 Request Entity Too Large
-      
+    
+## CloudApp Network – official REST API
+
+- invalid usernames return 422 Unprocessable Entity (WebDAV) (RFC 4918)
+- passwords length < 4 returns 422 Unprocessable Entity (WebDAV) (RFC 4918) as well
+- change privacy of an item duplicates the private|public item with new
+  private flags.
       
 ## cloudapp_api (Ruby wrapper)
 
