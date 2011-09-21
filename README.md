@@ -84,6 +84,11 @@ Note: you should set a *hostname* (=domain name) in conf.yaml, where you host
 Regenwolken. This will return into customized URLs, pointing directly to the
 ressource.
 
+### Configuration and Usage
+
+See [USAGE.md](/posativ/regenwolken/blob/master/doc/USAGE.md) for a detailed
+instruction manual.
+
 ### API implementation
 
 Regenwolken provides all API calls to get Cloud.app working and has only few
@@ -93,9 +98,8 @@ features. Below, the following are currently covered by the web interface.
     
     # -H "Accept: text/html"
     
-    /              - GET "Hallo Welt!"
-    /<short_id>    - GET file
-    /-<short_id>   - GET redirect from bookmark
+    /              - GET basic web interface
+    /<short_id>    - GET file or redirect from bookmark
 
 Thanks to [cmur2](https://github.com/cmur2) for his feature-rich
 [CLI](https://github.com/cmur2/cloudapp-cli) and help to build this service!
@@ -105,15 +109,13 @@ Thanks to [cmur2](https://github.com/cmur2) for his feature-rich
 #### working
 
 - Mac OS X [Cloud](http://itunes.apple.com/us/app/cloud/id417602904?mt=12&ls=1)
-- [cloudapp_api](https://github.com/aaronrussell/cloudapp_api) and cli frontend
-  [cloudapp-cli](https://github.com/cmur2/cloudapp-cli)
-  (thanks to [cmur2](https://github.com/cmur2))
+- [cloudapp-cli](https://github.com/cmur2/cloudapp-cli)
 - [Stratus](http://www.getstratusapp.com/) – CloudApp Client for iOS, but failing sometimes
 - [Cloudette](http://cloudetteapp.com/) – free CloudApp iPhone client, works flawlessly
 
 #### failing clients
 
-- Windows' [FluffyApp](http://fluffyapp.com/), because their aren't using the API m(
+- Windows' [FluffyApp](http://fluffyapp.com/), fails to login
 
 ### Links:
 
