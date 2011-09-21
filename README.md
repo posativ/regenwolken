@@ -86,7 +86,7 @@ ressource.
 
 ### Configuration and Usage
 
-See [USAGE.md](/posativ/regenwolken/blob/master/doc/USAGE.md) for a detailed
+See [USAGE.rst](/posativ/regenwolken/blob/master/doc/USAGE.rst) for a detailed
 instruction manual.
 
 ### API implementation
