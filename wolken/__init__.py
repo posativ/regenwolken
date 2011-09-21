@@ -52,7 +52,7 @@ class Config():
                 if value.isdigit():
                     value = int(value)
                 elif value.lower() in ['true', 'false']:
-                    value = bool(value.capitalize())
+                    value = True if value.capitalize() == 'True' else False
                 self.__dict__[key.upper()] = value
 
 conf = Config()

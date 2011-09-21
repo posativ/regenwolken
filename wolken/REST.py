@@ -437,6 +437,9 @@ def modify_item(environ, request, objectid):
 
         if key == 'name' and item['item_type'] != 'bookmark':
             item['filename'] = value
+        elif key == 'private' and item['item_type'] == 'bookmark' and value \
+        and not conf.ALLOW_PRIVATE_BOOKMARKS:
+            pass
         else:
             item[key] = value
 

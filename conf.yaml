@@ -9,4 +9,4 @@ mongodb_port: 27017
 mongodb_name: cloudapp
 
 max_content_length: 62914560
-allow_private_bookmarks: True
+allow_private_bookmarks: False

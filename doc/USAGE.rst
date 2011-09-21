@@ -42,7 +42,8 @@ max_content_length
 allowed_chars
     allowed chars in email address.
 allow_private_bookmarks
-    mark bookmarks as private (requires authentication on redirect)
+    allows bookmarks upload or marked as private. Only affects new uploaded
+    bookmarks. Private bookmarks requires authentication on redirect, as well.
 public_registration
     allow instant registration of accounts. If set to false, you have to
     manually activate accounts using ``bin/manage.py activate $email``
