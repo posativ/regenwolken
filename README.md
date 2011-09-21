@@ -11,8 +11,8 @@ pip) (e.g. `apt-get install python-setuputils`). Regenwolken uses
 [GridFS](http://www.mongodb.org/display/DOCS/GridFS) as file storage backend,
 therefore you need [MongoDB](http://mongodb.org/) 1.6 or higher.
 
-    pip install pymongo werkzeug # or
-    easy_install pymongo werkzeug
+    pip install pymongo werkzeug jinja2
+    # or: easy_install pymongo werkzeug jinja2
     
     # python2.5 users will need simplejson as well
     pip install simplejson
@@ -76,13 +76,13 @@ your /etc/lighttpd/lighttpd.conf to something like this:
 
 #### hints
 
-You might wonder, why we ask for "my.cloud.org|my.cl.ly". Your /eth/hosts
+You might wonder, why we ask for "my.cloud.org|my.cl.ly". Your /etc/hosts
 will resolve my.cl.ly to your server IP and requesting with the *Host* my.cl.ly,
 but it returns an URL pointing to your (real) server/domain.
 
 Note: you should set a *hostname* (=domain name) in conf.yaml, where you host
-Regenwolken. This will return into customized URLs, pointing directly to the
-ressource.
+Regenwolken. This will return into customized URLs, pointing directly to your
+server.
 
 ### Configuration and Usage
 
