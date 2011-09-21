@@ -67,28 +67,20 @@ def login(environ, response):
 
 @private
 def show(environ, request, short_id):
-    """returns file either as direct download with human-readable, original
-    filename or inline display using whitelisting"""
+    """returns bookmark or file either as direct download with human-readable,
+    original filename or inline display using whitelisting"""
     
     try:
         f = fs.get(short_id=short_id)
         cnt = f.view_counter
         fs.update(f._id, view_counter=cnt+1)
     except NoFile:
-        return Response('File not found!', 404)
-    if not f.content_type.split('/', 1)[0] in ['image', 'text']:
+        return Response('Not Found', 404)
+    
+    if f.item_type == 'bookmark':
+        return Response('Moved Permanently', 301,
+                    headers={'Location': f.redirect_url})    
+    elif not f.content_type.split('/', 1)[0] in ['image', 'text']:
         return Response(f, content_type=f.content_type, headers={'Content-Disposition':
                     'attachment; filename="%s"' % basename(f.filename)})
     return Response(f, content_type=f.content_type)
-
-
-@private
-def redirect(environ, request, short_id):
-    """find short id and redirect to this url"""
-    
-    cur = db.items.find_one({'short_id': '-'+short_id})
-    if not cur:
-        return Response('Not found.', 404)
-        
-    return Response('Moved Permanently', 301,
-                    headers={'Location': cur['redirect_url']})

@@ -7,6 +7,7 @@
 __version__ = "0.2"
 
 from wolken import Struct
+from pymongo.errors import DuplicateKeyError
 import gridfs
 
 class GridFS:
@@ -28,9 +29,12 @@ class GridFS:
         item_type = content_type.split('/', 1)[0]
         if not item_type in ['image', 'text', 'archive', 'audio', 'video']:
             item_type = 'unknown'
+            
+        if self.mdb.find_one({'short_id': kw['short_id']}):
+            raise DuplicateKeyError('short_id already exists')
         
         _id = self.gfs.put(data, _id=_id, content_type=content_type,
-                           filename=filename)
+                               filename=filename)
         if not kw:
             kw = {}
         kw.update({'_id': _id, 'item_type': item_type})

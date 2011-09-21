@@ -78,7 +78,6 @@ HTML_map = Map([
     Rule('/', endpoint=web.index),
     Rule('/login', endpoint=web.login_page, methods=['GET', 'HEAD']),
     Rule('/login', endpoint=web.login, methods=['POST']),
-    Rule('/-<short_id>', endpoint=web.redirect),
     Rule('/<short_id>', endpoint=web.show),
 ])
 

@@ -10,7 +10,7 @@
 __version__ = "0.2"
 
 from os import urandom
-from random import choice, randint, getrandbits
+from random import choice, getrandbits
 from base64 import standard_b64encode
 from urlparse import urlparse
 from urllib import unquote
@@ -33,6 +33,8 @@ from gridfs.errors import NoFile
 sessions = Sessions(timeout=3600)
 
 db = Connection(conf.MONGODB_HOST, conf.MONGODB_PORT)[conf.MONGODB_NAME]
+db.items.create_index('short_id')
+db.accounts.create_index('email')
 
 from wolken.mongonic import GridFS
 fs = GridFS(db)
@@ -356,21 +358,26 @@ def upload_file(environ, request):
     if not obj:
         return Response('Bad Request', 400)
     
+    if obj.filename.find(u'\x00') > 0:
+        filename = obj.filename[:-1]
+    else:
+        filename = obj.filename
+    
+    _id = str(getrandbits(32))
+    retry_count = 3
+    short_id_length = 3
     while True:
-        _id = gen(12, charset=string.digits)
-        if obj.filename.find(u'\x00') > 0:
-            filename = obj.filename[:-1]
-        else:
-            filename = obj.filename
-        
         try:
             fs.put(obj, _id=_id ,filename=filename, created_at=timestamp,
                    content_type=obj.mimetype, account=account, view_counter=0,
-                   short_id=gen(randint(3,8)), updated_at=timestamp,
+                   short_id=gen(short_id_length), updated_at=timestamp,
                    source=source, private=privacy)
             break
         except DuplicateKeyError:
-            pass
+            retry_count += 1
+            if retry_count > 3:
+                short_id_length += 1
+                retry_count = 1
     
     items = acc['items']
     items.append(_id)
@@ -447,14 +454,25 @@ def bookmark(environ, request):
         
         acc = db.accounts.find_one({'email': request.authorization.username})
         
-        _id = gen(12, charset=string.digits)
-        short_id = '-' + gen(randint(3,6))
+        _id = str(getrandbits(32))
+        retry_count = 1
+        short_id_length = 5
         
+        while True:
+            short_id = gen(short_id_length)
+            if not db.items.find_one({'short_id': short_id}):
+                break
+            else:
+                retry_count += 1
+                if retry_count > 3:
+                    short_id_length += 1
+                    retry_count = 1
+
         x = {
             'account': request.authorization.username,
             'name': name,
             '_id': _id,
-            'short_id': short_id,
+            'short_id': gen(short_id_length),
             'redirect_url': redirect_url,
             'item_type': 'bookmark',
             'view_counter': 0,
@@ -464,7 +482,7 @@ def bookmark(environ, request):
             'created_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
             'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         }
-        
+
         item = Item(x)
         db.items.insert(x)
         
