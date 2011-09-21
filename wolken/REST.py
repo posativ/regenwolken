@@ -95,6 +95,8 @@ def Item(obj, **kw):
         x['created_at'] = obj.created_at
         x['updated_at'] = obj.updated_at
         x['deleted_at'] = obj.deleted_at
+        if obj.deleted_at:
+            x['icon'] = "http://%s/images/item_types/trash.png" % conf.HOSTNAME
     except AttributeError:
         pass
 

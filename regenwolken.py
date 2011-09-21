@@ -115,7 +115,8 @@ if __name__ == '__main__':
 
     if True:
         app = SharedDataMiddleware(application, {
-            '/static/': join(dirname(__file__), 'wolken/static')
+            '/static/': join(dirname(__file__), 'wolken/static'),
+            '/images/': join(dirname(__file__), 'wolken/static/images')
         })
 
 
