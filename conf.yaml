@@ -1,4 +1,4 @@
-# conf.yaml for Regenwolken
+# conf.yaml for regenwolken
 
 hostname: localhost
 bind_address: 0.0.0.0

@@ -1,13 +1,17 @@
-# Regenwolken – an open source, self-hosting Cloud.app
+# regenwolken – an open source, self-hosting Cloud.app
 
 [CloudApp](http://getcloudapp.com/) sucks! Well, Cloud.app is really handy –
-but it's free of charge and this can't be good! Regenwolken offers an
+but it's free of charge and this can't be good! regenwolken offers an
 alternate API implementation; hosted on your own server!
+
+I've set up a server open for everyone. Simply, add `213.218.178.200 my.cl.ly`
+to your `/etc/hosts`. Items older than one day will be purged at midnight
+(only a small vserver). Happy testing!
 
 ### Installation
 
 You'll need [python](http://python.org/) 2.5 or higher and easy_install (or
-pip) (e.g. `apt-get install python-setuputils`). Regenwolken uses
+pip) (e.g. `apt-get install python-setuputils`). regenwolken uses
 [GridFS](http://www.mongodb.org/display/DOCS/GridFS) as file storage backend,
 therefore you need [MongoDB](http://mongodb.org/) 1.6 or higher.
 
@@ -32,7 +36,7 @@ CloudApp-Service itself, because they're using *cl.ly* for sharing.
 ### Setup
 
 There are two different setups: serve on port 80 as HTTP server or use a
-proxy. For the next setp, I assume you'll host Regenwolken on *my.cloud.org*.
+proxy. For the next setp, I assume you'll host regenwolken on *my.cloud.org*.
       
 First start MongoDB via `mongod --dbpath path/to/some/folder` and edit your
 *local* machine (where you run e.g. Cloud.app) */etc/hosts* (replace 127.0.0.1
@@ -43,7 +47,7 @@ with the desired IP):
 
 #### as HTTP server
 
-This will setup Regenwolken as primary HTTP-Server, listening on Port 80.
+This will setup regenwolken as primary HTTP-Server, listening on Port 80.
 Therefore, you'll need root access.
 
 - check, there is no other process on port 80
@@ -81,7 +85,7 @@ will resolve my.cl.ly to your server IP and requesting with the *Host* my.cl.ly,
 but it returns an URL pointing to your (real) server/domain.
 
 Note: you should set a *hostname* (=domain name) in conf.yaml, where you host
-Regenwolken. This will return into customized URLs, pointing directly to your
+regenwolken. This will return into customized URLs, pointing directly to your
 server.
 
 ### Configuration and Usage
@@ -91,7 +95,7 @@ instruction manual.
 
 ### API implementation
 
-Regenwolken provides all API calls to get Cloud.app working and has only few
+regenwolken provides all API calls to get Cloud.app working and has only few
 calls of [CloudApp's API](http://developer.getcloudapp.com/) missing. See
 [API.md](/posativ/regenwolken/blob/master/doc/API.md) for a complete list of
 features. Below, the following are currently covered by the web interface.

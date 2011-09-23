@@ -1,6 +1,6 @@
 # API overview and implementation details
 
-Regenwolken currently supports (see <http://developer.getcloudapp.com/>):
+regenwolken currently supports (see <http://developer.getcloudapp.com/>):
 
 #### Account
 
@@ -57,31 +57,31 @@ URLs marked with an asterix (*) require authentication.
 
 ## Details
 
-While Regenwolken tries to simulate the [CloudApp][1] API as good as possible
+While regenwolken tries to simulate the [CloudApp][1] API as good as possible
 using their sparse documentation details, there is one major point,
-Regenwolken handles different: private and public items. CloudApp *thinks*,
+regenwolken handles different: private and public items. CloudApp *thinks*,
 items are private, when they have a longer hash. That's no joke, that's their
 current implementation. When you upload a file without privacy hint, it tries
 to get the hash as short as possible, e.g. [cl.ly/5hd](). When you make this
 item private, the hash will change in something like this
-[cl.ly/29xgnqa49ny84jg83l](). This is *security by obscurity*. In Regenwolken,
+[cl.ly/29xgnqa49ny84jg83l](). This is *security by obscurity*. In regenwolken,
 your private items requires authentication. Only when you know the
 credentials, you have access to your private data.
 
 Another thing are *bookmarks* and *files*. I decided, to use [Heise][2]'s (a
 popular german site) link scheme: host.tld/-mylink, notice the dash. Files
-have no dash in front. Regenwolken also does not need an email-address to
+have no dash in front. regenwolken also does not need an email-address to
 register (but most clients force you to do so), alphanumeric names without @
 and . are supported, by default.
 
 ### upload-file (with given privacy)
 
 CloudApp uses [Heroku][3] and [S3][4] as their database and storage backend.
-Regenwolken only features one webservice. The upload progress divided into two
+regenwolken only features one webservice. The upload progress divided into two
 parts: `GET /items/new` (optional with privacy specs) to receive the upload
 URL as well as some CloudApp specific stuff we don't need (AWSAccessKeyId,
 signature, policy and redirect). Every client behaves the same and POSTs the
-server's response json to the `url`, which is *my.cl.ly* and Regenwolken is
+server's response json to the `url`, which is *my.cl.ly* and regenwolken is
 listening to. You see, `GET` and `POST` are completely different requests and
 URLs, therefore you will receive a `key=1234` on `/items/new` you will include
 when POSTing your files. If the server accepts your “upload key” (=~ session,
@@ -99,12 +99,13 @@ timeout after 60 minutes per default), your upload is valid.
     406 User already exists - when /register-ing an alreay existing user
     409 Conflict     - account not activated
     413 Request Entity Too Large - our size limit is 64 MiB
+    422 Unprocessable Entity - username or password not allowed
     
 ### HTTP Digest Authentication
 
 CloudApp Network uses digest authentication to prevent sending passwords as
 plain text over the air. This requires either storing passwords as plaintext
-or as A1 hash (see https://tools.ietf.org/html/rfc2069). Regenwolken uses the
+or as A1 hash (see https://tools.ietf.org/html/rfc2069). regenwolken uses the
 last option, salting passwords with username+realm.
 
 [1]: http://getcloudapp.com/

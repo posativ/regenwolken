@@ -1,12 +1,12 @@
 conf.yaml
 =========
 
-It is *no* real YAML, just enough to configure Regenwolken. This is the
+It is *no* real YAML, just enough to configure regenwolken. This is the
 current default conf.yaml:
 
 ::
 
-    # conf.yaml for Regenwolken
+    # conf.yaml for regenwolken
 
     hostname: localhost
     bind_address: 0.0.0.0
@@ -66,7 +66,7 @@ administration. Usage: ``python bin/manage.py``.
     $ python bin/manage.py --help
     Usage: manage.py [options] info|account|activate|purge|repair
 
-      info     – provides basic information of Regenwolken's MongoDB
+      info     – provides basic information of regenwolken's MongoDB
       activate – lists inactive accounts or activates given email
       account  – details of given (email or _id) or --all accounts
       files    – summary of uploaded files --all works, too
@@ -83,7 +83,7 @@ must invoke with at least one positional keyword like *info* and [options]
 and/or an argument.
 
 info
-    Provides basic information of Regenwolken's MongoDB. Just a short summary.
+    Provides basic information of regenwolken's MongoDB. Just a short summary.
 activate
     When PUBLIC_REGISTRATION is set to false, you can activate a given account
     using ``python bin/manage.py activate myaccount`` or ommit the argument to

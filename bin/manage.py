@@ -17,7 +17,7 @@
 # those of the authors and should not be interpreted as representing official
 # policies, either expressed or implied, of posativ <info@posativ.org>.
 #
-# Regenwolken is a CloudApp clone, with leave the cloud in mind.
+# regenwolken is a CloudApp clone, with leave the cloud in mind.
 
 __version__ = "0.3"
 
@@ -298,7 +298,7 @@ if __name__ == '__main__':
     from optparse import OptionParser, make_option
     
     usage = "usage: %prog [options] info|account|activate|purge|repair\n" + '\n' \
-            + "  info     – provides basic information of Regenwolken's MongoDB\n" \
+            + "  info     – provides basic information of regenwolken's MongoDB\n" \
             + "  activate – lists inactive accounts or activates given email\n" \
             + "  account  – details of given (email or _id) or --all accounts\n" \
             + "  files    – summary of uploaded files --all works, too\n" \

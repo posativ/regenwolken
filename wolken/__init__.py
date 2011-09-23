@@ -14,7 +14,7 @@ import string
 
 
 class Config():
-    """stores conf.yaml, Regenwolken has these config values:
+    """stores conf.yaml, regenwolken has these config values:
         - HOSTNAME
         - BIND_ADDRESS
         - PORT

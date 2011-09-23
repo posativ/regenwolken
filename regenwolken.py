@@ -17,7 +17,7 @@
 # those of the authors and should not be interpreted as representing official
 # policies, either expressed or implied, of posativ <info@posativ.org>.
 #
-# Regenwolken is a CloudApp clone, with leave the cloud in mind.
+# regenwolken is a CloudApp clone, with leave the cloud in mind.
 
 __version__ = "0.3"
 
@@ -97,7 +97,7 @@ REST_map = Map([
 @responder
 def application(environ, start_response):
 
-    environ['SERVER_SOFTWARE'] = "Regenwolken/%s" % __version__ # FIXME doesn't work
+    environ['SERVER_SOFTWARE'] = "regenwolken/%s" % __version__ # FIXME doesn't work
     request = Wolkenrequest(environ)
 
     if request.headers.get('Accept', 'application/json') == 'application/json':

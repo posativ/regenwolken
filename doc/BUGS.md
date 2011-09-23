@@ -1,4 +1,4 @@
-# Bugs found by Regenwolken
+# Bugs found by regenwolken
 
 ## Cloud.app – official Mac App
 
