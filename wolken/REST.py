@@ -448,6 +448,19 @@ def modify_item(environ, request, objectid):
     db.items.save(item)
     item = fs.get(item['_id'])
     return Response(json.dumps(Item(item)), 200, content_type='application/json; charset=utf-8')
+    
+
+@login
+def trash_items(environ, request):
+    '''no official API call yet.  Trash items marked as deleted. Usage:
+    curl -u user:pw --digest -H "Accept: application/json" -X POST http://my.cl.ly/items/trash'''
+    
+    empty = db.items.find({'account': request.authorization.username,
+                          'deleted_at': {'$ne': None}})
+    for item in empty:
+        fs.delete(item)
+    
+    return Response(status=200)
 
 
 @login

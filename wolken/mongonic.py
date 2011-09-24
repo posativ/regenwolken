@@ -24,7 +24,7 @@ class GridFS:
         '''shortcuts to gridFS(db) and db.items'''
 
         self.mdb = database.items
-        self.gfs = gridfs.GridFS(database, collection)
+        self.gfs = gridfs.GridFS(database, collection)  
 
     def put(self, data, _id, content_type, filename, **kw):
         '''upload file-only. Can not handle bookmarks.'''
@@ -70,3 +70,10 @@ class GridFS:
     def inc_count(self, _id):
         '''find and increase view_counter'''
         self.mdb.update({'_id': _id}, {'$inc': {'view_counter': 1}})
+        
+    def delete(self, item):
+        '''remove item from gridfs and db.items'''
+        
+        if item['item_type'] != 'bookmark':
+            self.gfs.delete(item['_id'])
+        self.mdb.remove(item['_id'])

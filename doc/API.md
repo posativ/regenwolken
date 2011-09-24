@@ -29,11 +29,18 @@ regenwolken currently supports (see <http://developer.getcloudapp.com/>):
 
 - [Forgot Password](http://developer.getcloudapp.com/forgot-password)
 - [Set Custom Domain](http://developer.getcloudapp.com/set-custom-domain)
-- [Empty Trash](http://developer.getcloudapp.com/empty-trash)
 - [Stream Items](http://developer.getcloudapp.com/streaming-items)
 - [View Domain Details](http://developer.getcloudapp.com/view-domain-details)
 - [Redeem Gift Card](http://developer.getcloudapp.com/redeem-gift-card)
 - [View Gift Card Details](http://developer.getcloudapp.com/view-gift-card)
+
+#### regenwolken extensions
+
+- [Empty Trash](http://developer.getcloudapp.com/empty-trash) – remove items
+  marked as deleted. No official API call yet. Derieved from Ajax POST in
+  webinterface. Usage with [curl](http://curl.haxx.se/):
+  
+  `curl -u user:pw --digest -H "Accept: application/json" -X POST http://my.cl.ly/items/trash`
 
 ## Overview
 
@@ -42,6 +49,7 @@ regenwolken currently supports (see <http://developer.getcloudapp.com/>):
     /*                 - POST files
     /items*            - POST (multiple) bookmarks
     /register          - POST register (instantly) new account
+    /items/trash       - POST empty trash
     /<short_id>        - GET item details
     /account*          - GET account info
     /account/stats*    - GET overall file count and views
@@ -87,7 +95,7 @@ URLs, therefore you will receive a `key=1234` on `/items/new` you will include
 when POSTing your files. If the server accepts your “upload key” (=~ session,
 timeout after 60 minutes per default), your upload is valid.
 
-## HTTP status codes
+### HTTP status codes
 
     200 Ok           - everything fine
     201 Ok           - register was successfully

@@ -91,6 +91,7 @@ REST_map = Map([
     Rule('/items', endpoint=REST.items),
     Rule('/items/new', endpoint=REST.items_new),
     Rule('/items/<objectid>', endpoint=REST.modify_item, methods=['HEAD', 'PUT', 'DELETE']),
+    Rule('/items/trash', endpoint=REST.trash_items, methods=['POST', ]),
 ])
 
 
