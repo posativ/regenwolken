@@ -113,13 +113,15 @@ Thanks to [cmur2](https://github.com/cmur2) for his feature-rich
 #### working
 
 - Mac OS X [Cloud](http://itunes.apple.com/us/app/cloud/id417602904?mt=12&ls=1)
-- [cloudapp-cli](https://github.com/cmur2/cloudapp-cli)
-- [Stratus](http://www.getstratusapp.com/) – CloudApp Client for iOS, but failing sometimes
 - [Cloudette](http://cloudetteapp.com/) – free CloudApp iPhone client, works flawlessly
+- [cloudapp-cli](https://github.com/cmur2/cloudapp-cli) – commandline tool
+- [JCloudApp](https://github.com/cmur2/jcloudapp) – cross-platform Cloud.app widget in Java
+- [gloudapp](https://github.com/cmur2/gloudapp) – linux+GTK-based client
 
 #### failing clients
 
 - Windows' [FluffyApp](http://fluffyapp.com/), fails to login
+- [Stratus](http://www.getstratusapp.com/) – CloudApp Client for iOS, fails often
 
 ### Links:
 
