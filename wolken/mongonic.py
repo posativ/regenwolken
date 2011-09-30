@@ -29,8 +29,13 @@ class GridFS:
     def put(self, data, _id, content_type, filename, **kw):
         '''upload file-only. Can not handle bookmarks.'''
 
-        item_type = content_type.split('/', 1)[0]
-        if not item_type in ['image', 'text', 'archive', 'audio', 'video']:
+        item_type, subtype = content_type.split('/', 1)
+        if item_type in ['image', 'text', 'audio', 'video']:
+            pass
+        elif item_type == 'application' and \
+        filter(lambda k: subtype.find(k) > -1, ['compress', 'zip', 'tar']):
+                item_type = 'archive'
+        else:
             item_type = 'unknown'
 
         if self.mdb.find_one({'short_id': kw['short_id']}):
