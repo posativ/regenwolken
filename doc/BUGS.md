@@ -34,3 +34,9 @@ Bugs:
 
     - missing HTTP Digest Auth RFC 2617 in httpary, see
       https://github.com/posativ/regenwolken/issues/8
+    - can not handle filesize limit (and large files)
+    - ... and many more minor issues
+    
+## cloudapp-cli and gloudapp
+
+    - can not handle filesize limit (and large files)
