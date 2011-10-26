@@ -88,6 +88,7 @@ REST_map = Map([
     Rule('/<short_id>', endpoint=REST.view_item, methods=['GET', ]),
     Rule('/account', endpoint=REST.account),
     Rule('/account/stats', endpoint=REST.account_stats),
+    Rule('/domains/<domain>', endpoint=REST.view_domain),
     Rule('/items', endpoint=REST.items),
     Rule('/items/new', endpoint=REST.items_new),
     Rule('/items/<objectid>', endpoint=REST.modify_item, methods=['HEAD', 'PUT', 'DELETE']),

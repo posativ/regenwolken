@@ -270,6 +270,13 @@ def account_stats(environ, request):
 
     d = {'items': len(items), 'views': views}
     return Response(json.dumps(d), 200, content_type='application/json; charset=utf-8')
+    
+
+def view_domain(environ, request, domain):
+    '''returns conf.HOSTNAME. Always.'''
+    
+    return Response('{ "home_page" }: "%s"' % conf.HOSTNAME,
+                     200, content_type='application/json; charset=utf-8')
 
 
 @login
