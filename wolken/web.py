@@ -7,9 +7,10 @@
 __version__ = "0.3"
 
 from os import urandom
-from os.path import basename
+from os.path import basename, splitext
 from random import getrandbits
 from base64 import standard_b64encode
+import mimetypes
 
 from werkzeug import Response
 from wolken import conf
@@ -20,10 +21,75 @@ from gridfs.errors import NoFile
 from jinja2 import Environment, PackageLoader
 jinenv = Environment(loader=PackageLoader('wolken', 'layouts'))
 
-from wolken.REST import prove_auth
+from wolken.REST import prove_auth, Item
 
 db = Connection(conf.MONGODB_HOST, conf.MONGODB_PORT)[conf.MONGODB_NAME]
 fs = GridFS(db)
+
+from pygments import highlight
+from pygments.lexers import get_lexer_for_filename
+from pygments.formatters import HtmlFormatter
+
+try:
+    from pygments.lexers import get_lexer_for_filename, ClassNotFound
+    def is_sourcecode(filename):
+        try:
+            get_lexer_for_filename(filename)
+            return True
+        except ClassNotFound:
+            return False
+except ImportError:
+    def is_sourcecode(filename):
+        whitelist = ['py', 'c'] # TODO: extend
+        
+        if splitext(filename)[1][1:] in whitelist:
+            return True
+        return False
+
+
+class Drop:
+    '''Drop class which renders item-specific layouts.'''
+    
+    def __init__(self, drop):
+        
+        def guess_type(url):
+            try:
+                m = mimetypes.guess_type(url)[0].split('/')[0]
+                if m in ['image', 'text']:
+                    return m
+            except AttributeError:
+                if self.markdown() or self.is_sourcecode():
+                    return 'text'
+            return 'other'
+        
+        self.__dict__.update(Item(drop))
+        self.read = drop.read
+        self.length = drop.length
+        self.item_type = guess_type(self.name)
+        self.url = self.__dict__['content_url']
+
+    def __str__(self):
+        
+        if self.item_type == 'image':
+            tt = jinenv.get_template('image.html')
+            return tt.render(drop=self)
+        
+        elif self.item_type == 'text':
+            tt = jinenv.get_template('text.html')
+            if self.is_sourcecode() and self.length <= 2**18:
+                html = highlight(self.read(), get_lexer_for_filename(self.url),
+                                 HtmlFormatter(lineos=False, cssclass='highlight'))
+                return tt.render(drop=self, textstream=html)
+            return tt.render(drop=self, textstream=self.read())
+        else:
+            tt = jinenv.get_template('other.html')
+            return tt.render(drop=self)
+            
+    def markdown(self):
+        return True if splitext(self.url)[1][1:] in ['md', 'mdown', 'markdown'] else False
+        
+    def is_sourcecode(self):
+        return is_sourcecode(self.url)
 
 
 def private(f):
@@ -54,10 +120,7 @@ def private(f):
 def index(environ, response):
     """my.cl.ly/"""
 
-
-    tt = jinenv.get_template('index.html')
-
-    return Response(tt.render(), 200, content_type='text/html')
+    return Response(tt.render(env), 200, content_type='text/html')
 
 def login_page(environ, response):
 
@@ -68,10 +131,21 @@ def login_page(environ, response):
 def login(environ, response):
 
     return Response('See there', 301, headers={'Location': '/'})
+    
+
+def drop(environ, response, short_id):
+    
+    tt = jinenv.get_template('layout.html')    
+    try:
+        drop = Drop(fs.get(short_id=short_id))
+    except NoFile:
+        return Response('Not Found', 404)
+    
+    return Response(tt.render(drop=drop), 200, content_type='text/html')
 
 
 @private
-def show(environ, request, short_id):
+def show(environ, request, short_id, name):
     """returns bookmark or file either as direct download with human-readable,
     original filename or inline display using whitelisting"""
 
