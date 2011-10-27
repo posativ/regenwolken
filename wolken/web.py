@@ -120,7 +120,7 @@ def private(f):
 def index(environ, response):
     """my.cl.ly/"""
 
-    return Response(tt.render(env), 200, content_type='text/html')
+    return Response("Not Implemented", 501, content_type='text/html')
 
 def login_page(environ, response):
 
