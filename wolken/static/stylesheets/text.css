@@ -1,0 +1,148 @@
+/*
+  title: text css
+*/
+
+#text {
+  background: url("../images/embed/text/body-bg.png") repeat #f8f8f8;
+  color: #494949;
+  font: 12px "Helvetica Neue", Helvetica, Arial, Geneva, sans-serif;
+  min-width: 320px;
+}
+
+/* =header
+---------------------------------------------- */
+#text #header {
+  background: url("../images/embed/text/header-bg.png") repeat-x;
+  height: 43px;
+  overflow: hidden;
+  position: relative;
+  text-align: center;
+}
+
+@-webkit-keyframes badgeSlideIn {
+  0% {
+    opacity: 0;
+    left: -50px;
+  }
+  100% {
+    opacity: 1;
+    left: 9px;
+  }
+}
+
+#text #header h1 {
+  -webkit-animation-duration: .2s;
+  -webkit-animation-name: badgeSlideIn;
+  -webkit-animation-timing-function: easeIn;
+  left: 9px;
+  position: absolute;
+  top: 9px;
+}
+
+#text #header h1 a {
+  background: url("../images/embed/text/badge.png") no-repeat;
+  display: block;
+  height: 24px;
+  text-indent: -99999px;
+  width: 119px;
+}
+
+@-webkit-keyframes titleFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+ 
+#text #header h2 {
+  -webkit-animation-duration: .5s;
+  -webkit-animation-name: titleFadeIn;
+  -webkit-animation-timing-function: linear;
+  color: #787878;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  font-weight: bold;
+  line-height: 42px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .75);
+}
+
+@-webkit-keyframes embedSlideIn {
+  0% {
+    opacity: 0;
+    right: -50px;
+  }
+  100% {
+    opacity: 1;
+    right: 10px;
+  }
+}
+
+#text #header .embed {
+  -webkit-animation-duration: .2s;
+  -webkit-animation-name: embedSlideIn;
+  -webkit-animation-timing-function: easeIn;
+  background: url("../images/embed/text/embed.png") no-repeat;
+  display: block;
+  -webkit-font-smoothing: antialiased;
+  font-size: 11px;
+  font-weight: bold;
+  height: 24px;
+  line-height: 24px;
+  padding: 0 0 0 25px;
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, .75);
+}
+
+#text #header a:link.embed,
+#text #header a:visited.embed {
+  color: #787878;
+  text-decoration: none;
+}
+
+#text #header a:hover.embed,
+#text #header a:active.embed {
+  background-position: 0 -24px;
+  color: #484848;
+}
+/* ------------------------------------------- */
+
+/* =content
+---------------------------------------------- */
+#text #content {
+  margin: 0 auto;
+  max-width: 740px;
+  padding: 48px 18px;
+}
+
+.wf-active #text #content {
+  padding: 32px 18px 48px 18px;
+}
+/* ------------------------------------------- */
+
+@media screen and (max-width: 479px) {
+  #text header h2 {
+    display: none !important;
+  }
+}
+
+@media screen and (max-device-width: 480px) { 
+  #text #content {
+    padding: 18px !important;
+  }
+}
+
+@media screen and (max-device-width: 480px) and (-webkit-min-device-pixel-ratio: 2) { 
+  #text #header h1 a {
+    background-image: url("../images/embed/text/badge-2x.png");
+    background-size: 119px 24px;
+  }
+
+  #text #header .embed {
+    background-image: url("../images/embed/text/embed-2x.png");
+    background-size: 16px 48px;
+  }
+}

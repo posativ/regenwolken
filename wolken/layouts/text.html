@@ -1,0 +1,16 @@
+<header id="header">
+
+  <h2>{{ drop.name | safe }}</h2>
+
+  <a class="embed" href="{{ drop.content_url | safe }}">Direct link</a>
+</header>
+
+<section class="monsoon" id="content">
+  <!-- # It might not be the best solution to force UTF-8 encoding. We"ll keep our
+      eyes open for encoding issues. -->
+  {% if drop.name.endswith('.txt') %}
+    {{ textstream }}
+  {% else %}
+    <pre><code>{{ textstream }}</code></pre>
+  {% endif %}
+</section>

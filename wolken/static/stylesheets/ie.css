@@ -1,0 +1,14 @@
+/*
+  title: ie css
+*/
+
+/* =other
+---------------------------------------------- */
+#other #content p a.download {
+  background-position: 0 0;
+}
+
+#other #content p small {
+  display: none;
+}
+/* ------------------------------------------- */

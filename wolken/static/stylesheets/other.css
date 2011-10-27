@@ -1,0 +1,132 @@
+/*
+  title: other css
+*/
+
+#other {
+  background: url("../images/embed/other/body-bg.png") repeat #191919;
+  color: #424b51;
+  font: 12px "Helvetica Neue", Helvetica, Arial, Geneva, sans-serif;
+  min-width: 320px;
+  padding: 18px;
+}
+
+#other .wrapper {
+  background: #fff;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+  -moz-box-shadow: 0 0 20px rgba(0, 0, 0, .75);
+  -webkit-box-shadow: 0 0 20px rgba(0, 0, 0, .75);
+  box-shadow: 0 0 20px rgba(0, 0, 0, .75);
+  margin: 48px auto 0;
+  text-align: center;
+  width: 284px;
+}
+
+/* =content
+---------------------------------------------- */
+#other #content {
+  padding: 18px;
+}
+
+#other #content figure {
+  background: url("../images/embed/other/thumbs.png") no-repeat #f7f8f8;
+  border: 1px solid #ced5d9;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+  height: 72px;
+  margin: 0 auto 12px auto;
+  width: 72px;
+}
+
+#other #content figure.archive {
+  background-position: 0 0;
+}
+
+#other #content figure.other {
+  background-position: 0 -72px;
+}
+
+#other #content figure.audio {
+  background-position: 0 -144px;
+}
+
+#other #content figure.video {
+  background-position: 0 -216px;
+}
+
+#other #content h2 {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  font-weight: bold;
+  margin: 0 0 12px 0;
+}
+
+#other #content p a {
+  background: url("../images/embed/other/view-button.png");
+  display: block;
+  height: 27px;
+  margin: 0 auto 4px auto;
+  text-indent: -99999px;
+  width: 96px;
+}
+
+#other #content p a.download {
+  background-position: 0 -27px;
+}
+
+#other #content p small {
+  color: #9fa8ad;
+  font-size: 11px;
+}
+
+#other #content p small strong {
+  font-weight: bold;
+}
+/* ------------------------------------------- */
+
+/* =footer
+---------------------------------------------- */
+#footer {
+  border-top: 1px solid #e8edef;
+  padding: 4px 0;
+}
+
+#footer a {
+  background: url("../images/embed/other/badge.png");
+  display: block;
+  height: 24px;
+  margin: 0 auto;
+  text-indent: -99999px;
+  width: 119px;
+}
+/* ------------------------------------------- */
+
+@media screen and (max-device-width: 480px) {
+  #other #content p small {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 480px) and (-webkit-min-device-pixel-ratio: 2) { 
+  #other {
+    background-image: url("../images/embed/other/body-bg-2x.png");
+    background-size: 145px 145px;
+  }
+
+  #other #content figure {
+    background-image: url("../images/embed/other/thumbs-2x.png");
+    background-size: 72px 288px;
+  }
+
+  #other #content p a {
+    background-image: url("../images/embed/other/view-button-2x.png");
+    background-size: 96px 54px;
+  }
+
+  #other #footer a {
+    background-image: url("../images/embed/other/badge-2x.png");
+    background-size: 119px 24px;
+  }
+}

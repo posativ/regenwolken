@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html class="no-js" dir="ltr" lang="en">
+  <head>
+    <title>{{  drop.name | safe }}</title>
+
+    <meta charset="utf-8">
+
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+    <meta content="width = device-width, initial-scale = 1.0, maximum-scale = 1.0, minimum-scale = 1.0, user-scalable = no" name="viewport">
+
+    <meta content="CloudApp" name="author">
+
+    <link href="/images/favicon.ico" rel="shortcut icon">
+    
+    <!-- include_stylesheets :viso -->
+    <link href="/static/stylesheets/reset.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="/static/stylesheets/monsoon.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="/static/stylesheets/image.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="/static/stylesheets/other.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="/static/stylesheets/text.css" media="screen" rel="stylesheet" type="text/css" />
+    <link href="/static/stylesheets/syntax.css" media="screen" rel="stylesheet" type="text/css" />
+
+    <!--[if IE]>
+    <link href="/stylesheets/ie.css" media="screen" rel="stylesheet" type="text/css" />
+    <![endif]-->
+    
+    <!-- include_javascripts :viso -->
+    <script src="/static/javascripts/vendor/jquery-1.6.1.min.js"></script>
+    <script src="/static/javascripts/vendor/modernizr-1.7.min.js"></script>
+    <script src="/static/javascripts/image.js"></script>
+    <script src="/static/javascripts/other.js"></script>
+
+    <!--[if lt IE 9]>
+    <script src="/static/javascripts/vendor/selectivizr-1.0.2.min.js"></script>
+    <![endif]-->
+
+  <body id="{{ drop.item_type }}">
+      {{ drop }}
+  </body>
+</html>
