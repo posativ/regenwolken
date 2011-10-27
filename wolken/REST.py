@@ -275,7 +275,7 @@ def account_stats(environ, request):
 def view_domain(environ, request, domain):
     '''returns conf.HOSTNAME. Always.'''
     
-    return Response('{"home_page"}: "http://%s"' % conf.HOSTNAME,
+    return Response('{"home_page": "http://%s"}' % conf.HOSTNAME,
                      200, content_type='application/json; charset=utf-8')
 
 
