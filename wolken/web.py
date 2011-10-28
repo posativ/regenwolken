@@ -9,42 +9,38 @@ __version__ = "0.3"
 from os import urandom
 from os.path import basename, splitext
 from random import getrandbits
-from base64 import standard_b64encode
+from base64 import standard_b64decode, standard_b64encode
 import mimetypes
 
 from werkzeug import Response
+from werkzeug.contrib.cache import SimpleCache
+cache = SimpleCache( 30*60)
+
 from wolken import conf
 from wolken.mongonic import GridFS
+from wolken.REST import prove_auth, Item
 from pymongo import Connection
 from gridfs.errors import NoFile
 
 from jinja2 import Environment, PackageLoader
 jinenv = Environment(loader=PackageLoader('wolken', 'layouts'))
 
-from wolken.REST import prove_auth, Item
-
 db = Connection(conf.MONGODB_HOST, conf.MONGODB_PORT)[conf.MONGODB_NAME]
 fs = GridFS(db)
 
 from pygments import highlight
-from pygments.lexers import get_lexer_for_filename
+from pygments.lexers import get_lexer_for_filename, ClassNotFound
 from pygments.formatters import HtmlFormatter
 
+from PIL import Image, ImageFile
+
 try:
-    from pygments.lexers import get_lexer_for_filename, ClassNotFound
-    def is_sourcecode(filename):
-        try:
-            get_lexer_for_filename(filename)
-            return True
-        except ClassNotFound:
-            return False
+    import cStringIO as StringIO
 except ImportError:
-    def is_sourcecode(filename):
-        whitelist = ['py', 'c'] # TODO: extend
-        
-        if splitext(filename)[1][1:] in whitelist:
-            return True
-        return False
+    import StringIO
+
+
+class ThumbnailException(Exception): pass
 
 
 class Drop:
@@ -87,9 +83,13 @@ class Drop:
             
     def markdown(self):
         return True if splitext(self.url)[1][1:] in ['md', 'mdown', 'markdown'] else False
-        
+    
     def is_sourcecode(self):
-        return is_sourcecode(self.url)
+        try:
+            get_lexer_for_filename(self.filename)
+            return True
+        except ClassNotFound:
+            return False
 
 
 def private(f):
@@ -142,10 +142,32 @@ def drop(environ, response, short_id):
         return Response('Not Found', 404)
     
     return Response(tt.render(drop=drop), 200, content_type='text/html')
+    
+
+def thumbnail(fp, size=128, bs=2048):
+    """generate png thumbnails"""
+
+    p = ImageFile.Parser()
+    
+    try:
+        while True:
+            s = fp.read(bs)
+            if not s:
+                break
+            p.feed(s)
+
+        img = p.close()
+        img.thumbnail((size, size))
+        op = StringIO.StringIO()
+        img.save(op, 'PNG')
+        op.seek(0)
+        return op.read().encode('base64')
+    except IOError:
+        raise ThumbnailException
 
 
 @private
-def show(environ, request, short_id, name):
+def show(environ, request, short_id, filename):
     """returns bookmark or file either as direct download with human-readable,
     original filename or inline display using whitelisting"""
 
@@ -162,3 +184,32 @@ def show(environ, request, short_id, name):
         return Response(f, content_type=f.content_type, headers={'Content-Disposition':
                     'attachment; filename="%s"' % basename(f.filename)})
     return Response(f, content_type=f.content_type)
+
+
+@private
+def thumb(environ, request, short_id):
+    """returns 128px thumbnail, when possible and cached for 30 minutes,
+    otherwise item_type icons."""
+    
+    th = cache.get('thumb-'+short_id)
+    if th:
+        return Response(standard_b64decode(th), 200, content_type='image/png')
+    try:
+        rv = fs.get(short_id=short_id)
+    except NoFile:
+        return Response('Not Found', 404)
+
+    if rv.item_type == 'image':
+        try:
+            th = thumbnail(rv)
+            cache.set('thumb-'+short_id, th)
+            return Response(standard_b64decode(th), 200, content_type='image/png')
+        except ThumbnailException:
+            pass
+    return Response(open('wolken/static/images/item_types/%s.png' % rv.item_type),
+                    200, content_type='image/png')
+            
+        
+    
+        
+
