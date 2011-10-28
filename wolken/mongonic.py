@@ -28,6 +28,9 @@ class GridFS:
 
     def put(self, data, _id, content_type, filename, **kw):
         '''upload file-only. Can not handle bookmarks.'''
+        
+        if _id in ['thumb', 'items', 'login']:
+            raise DuplicateKeyError
 
         item_type, subtype = content_type.split('/', 1)
         if item_type in ['image', 'text', 'audio', 'video']:
