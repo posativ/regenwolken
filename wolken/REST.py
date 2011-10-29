@@ -13,7 +13,7 @@ from os import urandom
 from random import choice, getrandbits
 from base64 import standard_b64encode
 from urlparse import urlparse
-from urllib import unquote
+from urllib import quote, unquote
 from time import strftime, gmtime
 import hashlib
 import string
@@ -24,6 +24,7 @@ except ImportError:
     import simplejson as json
 
 from werkzeug.wrappers import Response
+from werkzeug.utils import secure_filename
 from wolken import Sessions, conf, Struct
 
 from pymongo import Connection, DESCENDING
@@ -51,7 +52,7 @@ def Item(obj, **kw):
         item_type:      image, bookmark, ... there are more
         view_counter:   obviously
         icon:           some picture to display `item_type`
-        remote_url:     <unknown>
+        remote_url:     <unknown>, href + quoted name
         thumbnail_url:  <url to thumbnail, when used?>
         redirect_url:   redirection url in bookmark items
         source:         client name
@@ -80,14 +81,14 @@ def Item(obj, **kw):
     if obj.item_type == 'bookmark':
         x['name'] = obj.name
         x['url'] = 'http://' + conf.HOSTNAME + '/' + obj.short_id
-        x['content_url'] = x['url']
+        x['content_url'] = x['url'] + '/content'
         x['remote_url'] = None
         x['redirect_url'] = obj.redirect_url
     else:
         x['name'] = obj.filename
         x['url'] = 'http://' + conf.HOSTNAME + '/' + obj.short_id
-        x['content_url'] = x['url'] + '/' + obj.filename
-        x['remote_url'] = x['url']
+        x['content_url'] = x['url'] + '/' + secure_filename(obj.filename)
+        x['remote_url'] = x['url'] + '/' + quote(obj.filename)
         x['thumbnail_url'] = x['url'] # TODO: thumbails
         x['redirect_url'] = None
 
