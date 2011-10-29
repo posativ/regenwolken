@@ -53,6 +53,15 @@ short_id_min_length
     minimum length of the short_id link (e.g. http://example.org/af3d). Retries
     three times to generate a non-existing random id before length
     is incremented by 1.
+    
+thumbnails
+    dis/enables thumbnail rendering of (by PIL) known images.
+syntax_highlighting
+    dis/enables pygments powered syntax highlighting. If you remove this
+    dependency, regenwolken is not able to recognize sourcecode file extensions
+    as text-type.
+markdown_formatting
+    dis/enables markdown formatting of files ending with .md, .mkdown, .markdown
 
 
 bin/manage.py

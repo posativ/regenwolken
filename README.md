@@ -15,8 +15,8 @@ pip) (e.g. `apt-get install python-setuputils`). regenwolken uses
 [GridFS](http://www.mongodb.org/display/DOCS/GridFS) as file storage backend,
 therefore you need [MongoDB](http://mongodb.org/) 1.6 or higher.
 
-    pip install pymongo werkzeug jinja2 pygments
-    # or: easy_install pymongo werkzeug jinja2 pygments
+    pip install pymongo werkzeug jinja2
+    # or: easy_install pymongo werkzeug jinja2
     
     # python2.5 users will need simplejson as well
     pip install simplejson
@@ -32,6 +32,9 @@ CloudApp-Service itself, because they're using *cl.ly* for sharing.
 
     mongodb_host: 127.0.0.1
     mongodb_port: 2701
+    
+If you want additional syntax highlighting, markdown support and image
+thumbnailing, also do `pip install pygments markdown PIL` respectively.
 
 ### Setup
 
