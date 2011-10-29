@@ -28,11 +28,25 @@ jinenv = Environment(loader=PackageLoader('wolken', 'layouts'))
 db = Connection(conf.MONGODB_HOST, conf.MONGODB_PORT)[conf.MONGODB_NAME]
 fs = GridFS(db)
 
-from pygments import highlight
-from pygments.lexers import get_lexer_for_filename, ClassNotFound
-from pygments.formatters import HtmlFormatter
+try:
+    from pygments import highlight
+    from pygments.lexers import get_lexer_for_filename, ClassNotFound
+    from pygments.formatters import HtmlFormatter
+except ImportError:
+    if conf.SYNTAX_HIGHLIGHTING:
+        raise ImportError("'pygments' not found")
 
-from PIL import Image, ImageFile
+try:
+    import markdown
+except ImportError:
+    if conf.MARKDOWN_FORMATTING:
+        raise ImportError("'markdown' not found")
+
+try:
+    from PIL import Image, ImageFile
+except ImportError:
+    if conf.THUMBNAILS:
+        raise ImportError("'PIL' not found")
 
 try:
     import cStringIO as StringIO
@@ -72,7 +86,7 @@ class Drop:
         
         elif self.item_type == 'text':
             tt = jinenv.get_template('text.html')
-            if self.is_sourcecode() and self.length <= 2**18:
+            if self.is_sourcecode() and self.length <= 2**18 and conf.SYNTAX_HIGHLIGHTING:
                 html = highlight(self.read(), get_lexer_for_filename(self.url),
                                  HtmlFormatter(lineos=False, cssclass='highlight'))
                 return tt.render(drop=self, textstream=html)
@@ -192,14 +206,14 @@ def thumb(environ, request, short_id):
     otherwise item_type icons."""
     
     th = cache.get('thumb-'+short_id)
-    if th:
-        return Response(standard_b64decode(th), 200, content_type='image/png')
+    if th: return Response(standard_b64decode(th), 200, content_type='image/png')
+    
     try:
         rv = fs.get(short_id=short_id)
     except NoFile:
         return Response('Not Found', 404)
 
-    if rv.item_type == 'image':
+    if rv.item_type == 'image' and conf.THUMBNAILS:
         try:
             th = thumbnail(rv)
             cache.set('thumb-'+short_id, th)

@@ -25,6 +25,13 @@ class Config():
         - MAX_CONTENT_LENGTH: maximum content length before raising 413
         - ALLOW_PRIVATE_BOOKMARKS: True | False
         - PUBLIC_REGISTRATION: instant registration, True | False
+        
+        - CACHE_BACKEND: SimpleCache
+        - CACHE_TIMEOUT: 15*60
+        
+        - THUMBNAILS: True
+        - SYNTAX_HIGHLIGHTING: True
+        - MARKDOWN_FORMATTING: True
         """
 
     def __init__(self):
@@ -35,11 +42,20 @@ class Config():
         self.MONGODB_HOST = "127.0.0.1"
         self.MONGODB_PORT = 27017
         self.MONGODB_NAME = 'cloudapp'
+        
         self.ALLOWED_CHARS = string.digits + string.ascii_letters + '.- @'
         self.MAX_CONTENT_LENGTH = 1024*1024*64
         self.ALLOW_PRIVATE_BOOKMARKS = False
         self.PUBLIC_REGISTRATION = False
         self.SHORT_ID_MIN_LENGTH = 3
+        
+        self.CACHE_BACKEND = 'SimpleCache'
+        self.CACHE_TIMEOUT = 15*60
+        
+        self.THUMBNAILS = True
+        self.SYNTAX_HIGHLIGHTING = True
+        self.MARKDOWN_FORMATTING = True
+        
         for line in open('conf.yaml'):
             line = line.strip()
             if line and not line.startswith('#'):
@@ -94,7 +110,6 @@ class Sessions:
 
     def _outdated(self):
         '''automatic cleanup of outdated sessions, 60sec time-to-live'''
-        #FIXME: interferes with authentication
         self.db = dict([(k, v) for k,v in self.db.items()
                             if (time.time() - v[0]) <= self.timeout])
 
@@ -116,138 +131,3 @@ class Sessions:
                 'account': account})
 
         return session_id
-
-
-# class File(file):
-#     """A wrapper for the file class, extended to act like GridOut"""
-# 
-#     def __init__(self, *args, **kwargs):
-#         file.__init__(self, *args, **kwargs)
-# 
-#     def update(self, **entries):
-#         self.__dict__.update(entries)
-# 
-# 
-# class LocalFS:
-#     '''Abstraction layer to save files in filesystem instead of GridFS.
-# 
-#     It stores every file as truncated md5 hash (8 characters long) to
-#     `datadir`/`md5 of $year$month$day`/ and updates the index file of this
-#     day (.index, js object notation).
-# 
-#     It is intended as a leightweight MongoDB alternative using a json-based
-#     database storage as well. MongoDB+Grid is not planned.'''
-# 
-#     def __init__(self, datadir):
-#         '''sets/creates data dir and builds a shortcut for the .index-files.'''
-# 
-#         if not isdir(datadir):
-#             try:
-#                 os.makedirs(datadir)
-#             except OSError, e:
-#                 print e
-#                 print >> sys.stderr, 'could not create %s' % datadir
-#                 sys.exit(1)
-# 
-#         self.index = join(datadir, '%s' ,'.index')
-#         self.datadir = datadir
-# 
-#     def put(self, obj, _id, filename, upload_date, content_type, account):
-#         """save file to Grid.  This is currently hard-coded and represents
-#         the implementation in wolken/REST.py:upload_file."""
-# 
-#         try:
-#             self.get(_id)
-#             raise DuplicateKeyError
-#         except NoFile:
-#             pass
-# 
-#         hdir = hashlib.sha1(time.strftime('%Y%m%d')).hexdigest()[:8] # hash dir
-#         path = join(self.datadir, hdir, _id)
-#         if not isdir(dirname(path)):
-#             os.mkdir(dirname(path))
-#         # save file
-#         obj.save(path)
-# 
-#         if not exists(self.index % hdir):
-#             f = open(self.index % hdir, 'w')
-#             f.close()
-#             index = {}
-#         else:
-#             f = open(self.index % hdir, 'r')
-#             index = json.load(f)
-#             f.close()
-# 
-#         index[_id] = {'filename': filename, 'upload_date': upload_date,
-#                       'content_type': content_type, 'account': account,
-#                       'name': obj.name}
-# 
-#         f = open(self.index % hdir, 'w')
-#         json.dump(index, f)
-#         f.close()
-# 
-#         return _id
-# 
-#     def get(self, _id):
-#         """traverse datadir and returns File (GridOut-like) if found else None"""
-# 
-#         dirs = [ts for ts in os.listdir(self.datadir)
-#                     if isdir(join(self.datadir, ts))]
-#         for ts in dirs:
-#             f = open(self.index % ts, 'r')
-#             index = json.load(f)
-#             f.close()
-#             if _id in index:
-#                 f = File(join(self.datadir, ts, _id))
-#                 f.update(_id=_id, **index[_id])
-#                 return f
-#         else:
-#             raise NoFile
-# 
-# 
-# 
-#
-# class Grid:
-#     '''A more usable GridFS with LocalFS fallback'''
-#
-#     def __init__(self, db):
-#
-#         if SETTINGS.BACKEND.lower() == 'mongodb':
-#
-#             self.mdb = db
-#             self.gfs = gridfs.GridFS(db)
-#             self.type = 'mongodb'
-#
-#         else:
-#             pass
-#
-#     def put(self, obj, filename, content_type, account, **kw):
-#         '''save obj and filename to GridFS or LocalFS and all additional
-#         arguments read/writable for further modificatons. Returns id.'''
-#
-#         def genId(length=8, charset=string.ascii_lowercase+string.digits):
-#             """generates a pseudorandom string of a-z0-9 of given length"""
-#             return ''.join([choice(charset) for x in xrange(length)])
-#
-#         if self.type == 'mongodb':
-#
-#             file_id = self.gfs.put(obj, filename, content_type=content_type,
-#                                    account=account)
-#
-#             items = self.mdb.items
-#             items.insert()
-#
-#             fs.put(obj, _id=_id ,filename=filename.replace(r'\x00', ''),
-#                        upload_date=timestamp, content_type=obj.mimetype,
-#                        account=account)
-#
-#     def get(self, short):
-#         '''returns file belonging to http://domain.tld/<short>'''
-#         pass
-#
-#     def details(self, _id):
-#         '''returns '''
-#         pass
-#
-#
-#
