@@ -6,6 +6,7 @@
 
 __version__ = "0.3"
 
+import sys
 from os import urandom
 from os.path import basename, splitext
 from random import getrandbits
@@ -34,19 +35,22 @@ try:
     from pygments.formatters import HtmlFormatter
 except ImportError:
     if conf.SYNTAX_HIGHLIGHTING:
-        raise ImportError("'pygments' not found")
+        print >> sys.stderr, "'pygments' not found, syntax highlighting disabled"
+    conf.SYNTAX_HIGHLIGHTING = False
 
 try:
     import markdown
 except ImportError:
     if conf.MARKDOWN_FORMATTING:
-        raise ImportError("'markdown' not found")
+        print >> sys.stderr, "'markdown' not found, markdown formatting disabled"
+    conf.MARKDOWN_FORMATTING = False
 
 try:
     from PIL import Image, ImageFile
 except ImportError:
     if conf.THUMBNAILS:
-        raise ImportError("'PIL' not found")
+        print >> sys.stderr, "'PIL' not found, thumbnailing disabled"
+    conf.THUMBNAILS = False
 
 try:
     import cStringIO as StringIO
@@ -107,6 +111,9 @@ class Drop:
         return True if splitext(self.url)[1][1:] in ['md', 'mdown', 'markdown'] else False
     
     def is_sourcecode(self):
+        try: ClassNotFound
+        except NameError: return False
+        
         try:
             get_lexer_for_filename(self.filename)
             return True
