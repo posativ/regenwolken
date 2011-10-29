@@ -14,7 +14,7 @@ import mimetypes
 
 from werkzeug import Response
 from werkzeug.contrib.cache import SimpleCache
-cache = SimpleCache( 30*60)
+cache = SimpleCache(30*60)
 
 from wolken import conf
 from wolken.mongonic import GridFS
@@ -73,8 +73,8 @@ class Drop:
             return 'other'
         
         self.__dict__.update(Item(drop))
-        self.read = drop.read
-        self.length = drop.length
+        self.read, self.length = drop.read, drop.length
+        self.filename, self.short_id = drop.filename, drop.short_id
         self.item_type = guess_type(self.name)
         self.url = self.__dict__['content_url']
 
@@ -86,9 +86,17 @@ class Drop:
         
         elif self.item_type == 'text':
             tt = jinenv.get_template('text.html')
-            if self.is_sourcecode() and self.length <= 2**18 and conf.SYNTAX_HIGHLIGHTING:
+            rv = cache.get('text-'+self.short_id)
+            if rv:
+                return tt.render(drop=self, textstream=rv)
+            if self.markdown() and conf.MARKDOWN_FORMATTING:
+                md = markdown.markdown(self.read())
+                cache.set('text-'+self.short_id, md)
+                return tt.render(drop=self, textstream=md)
+            elif self.is_sourcecode() and conf.SYNTAX_HIGHLIGHTING:
                 html = highlight(self.read(), get_lexer_for_filename(self.url),
                                  HtmlFormatter(lineos=False, cssclass='highlight'))
+                cache.set('text-'+self.short_id, html)
                 return tt.render(drop=self, textstream=html)
             return tt.render(drop=self, textstream=self.read())
         else:
