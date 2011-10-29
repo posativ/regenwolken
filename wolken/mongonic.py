@@ -24,7 +24,7 @@ class GridFS:
         '''shortcuts to gridFS(db) and db.items'''
 
         self.mdb = database.items
-        self.gfs = gridfs.GridFS(database, collection)  
+        self.gfs = gridfs.GridFS(database, collection)
 
     def put(self, data, _id, content_type, filename, **kw):
         '''upload file-only. Can not handle bookmarks.'''

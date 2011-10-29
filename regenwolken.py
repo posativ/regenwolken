@@ -105,7 +105,7 @@ def application(environ, start_response):
     environ['SERVER_SOFTWARE'] = "regenwolken/%s" % __version__ # FIXME doesn't work
     request = Wolkenrequest(environ)
 
-    if 'text/html' in request.accept_mimetypes:
+    if request.accept_mimetypes.accept_html:
         urls = HTML_map.bind_to_environ(environ)
     else:
         urls = REST_map.bind_to_environ(environ)
