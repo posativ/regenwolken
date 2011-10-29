@@ -208,8 +208,3 @@ def thumb(environ, request, short_id):
             pass
     return Response(open('wolken/static/images/item_types/%s.png' % rv.item_type),
                     200, content_type='image/png')
-            
-        
-    
-        
-

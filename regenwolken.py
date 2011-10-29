@@ -79,7 +79,9 @@ HTML_map = Map([
     Rule('/login', endpoint=web.login_page, methods=['GET', 'HEAD']),
     Rule('/login', endpoint=web.login, methods=['POST']),
     Rule('/<short_id>', endpoint=web.drop),
-    Rule('/<short_id>/<name>', endpoint=web.show),
+    Rule('/<short_id>/<filename>', endpoint=web.show),
+    Rule('/items/<short_id>/<filename>', endpoint=web.show),
+    Rule('/thumb/<short_id>', endpoint=web.thumb),
 ])
 
 REST_map = Map([
@@ -103,7 +105,7 @@ def application(environ, start_response):
     environ['SERVER_SOFTWARE'] = "regenwolken/%s" % __version__ # FIXME doesn't work
     request = Wolkenrequest(environ)
 
-    if request.headers.get('Accept', 'application/json') == 'application/json':
+    if 'application/json' in request.accept_mimetypes:
         urls = REST_map.bind_to_environ(environ)
     else:
         urls = HTML_map.bind_to_environ(environ)
