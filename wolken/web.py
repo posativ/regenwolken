@@ -72,7 +72,8 @@ class Drop:
                 if m in ['image', 'text']:
                     return m
             except AttributeError:
-                if self.markdown() or self.is_sourcecode():
+                print self.markdown
+                if self.markdown or self.sourcecode:
                     return 'text'
             return 'other'
         
@@ -93,11 +94,11 @@ class Drop:
             rv = cache.get('text-'+self.short_id)
             if rv:
                 return tt.render(drop=self, textstream=rv)
-            if self.markdown() and conf.MARKDOWN_FORMATTING:
+            if self.markdown and conf.MARKDOWN_FORMATTING:
                 md = markdown.markdown(self.read())
                 cache.set('text-'+self.short_id, md)
                 return tt.render(drop=self, textstream=md)
-            elif self.is_sourcecode() and conf.SYNTAX_HIGHLIGHTING:
+            elif self.sourcecode and conf.SYNTAX_HIGHLIGHTING:
                 html = highlight(self.read(), get_lexer_for_filename(self.url),
                                  HtmlFormatter(lineos=False, cssclass='highlight'))
                 cache.set('text-'+self.short_id, html)
@@ -106,11 +107,13 @@ class Drop:
         else:
             tt = jinenv.get_template('other.html')
             return tt.render(drop=self)
-            
-    def markdown(self):
-        return True if splitext(self.url)[1][1:] in ['md', 'mdown', 'markdown'] else False
     
-    def is_sourcecode(self):
+    @property
+    def markdown(self):
+        return True if splitext(self.filename)[1][1:] in ['txt', 'md', 'mdown', 'markdown'] else False
+    
+    @property
+    def sourcecode(self):
         try: ClassNotFound
         except NameError: return False
         
@@ -164,13 +167,16 @@ def login(environ, response):
 
 def drop(environ, response, short_id):
     
-    tt = jinenv.get_template('layout.html')    
+    tt = jinenv.get_template('layout.html')
     try:
-        drop = Drop(fs.get(short_id=short_id))
+        drop = fs.get(short_id=short_id)
     except NoFile:
         return Response('Not Found', 404)
+        
+    if drop.item_type == 'bookmark':
+        return Response('Moved Temporarily', 302, headers={'Location': drop.redirect_url})
     
-    return Response(tt.render(drop=drop), 200, content_type='text/html')
+    return Response(tt.render(drop=Drop(drop)), 200, content_type='text/html')
     
 
 def thumbnail(fp, size=128, bs=2048):
