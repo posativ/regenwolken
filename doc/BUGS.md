@@ -40,3 +40,7 @@ Bugs:
 ## cloudapp-cli and gloudapp
 
     - can not handle filesize limit (and large files)
+    
+## BlueNube & Stratus
+
+    - shows items marked as delete
