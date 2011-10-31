@@ -10,6 +10,7 @@ regenwolken currently supports (see <http://developer.getcloudapp.com/>):
 - [Register](http://developer.getcloudapp.com/register)
 - [View Account Details](http://developer.getcloudapp.com/view-account-details)
 - [View Account Stats](http://developer.getcloudapp.com/view-account-stats)
+- [View Domain Details](http://developer.getcloudapp.com/view-domain-details)
 
 #### Items
 
@@ -30,7 +31,6 @@ regenwolken currently supports (see <http://developer.getcloudapp.com/>):
 - [Forgot Password](http://developer.getcloudapp.com/forgot-password)
 - [Set Custom Domain](http://developer.getcloudapp.com/set-custom-domain)
 - [Stream Items](http://developer.getcloudapp.com/streaming-items)
-- [View Domain Details](http://developer.getcloudapp.com/view-domain-details)
 - [Redeem Gift Card](http://developer.getcloudapp.com/redeem-gift-card)
 - [View Gift Card Details](http://developer.getcloudapp.com/view-gift-card)
 
@@ -53,6 +53,7 @@ regenwolken currently supports (see <http://developer.getcloudapp.com/>):
     /<short_id>        - GET item details
     /account*          - GET account info
     /account/stats*    - GET overall file count and views
+    /domains/domain*   - GET domain info (always returning *hostname*)
     /items*            - GET list of uploaded items
     /items/new*        - GET key for new upload
     /items/new?item['private]=true|false* - GET key for new upload
