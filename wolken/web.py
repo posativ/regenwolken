@@ -72,8 +72,7 @@ class Drop:
                 if m in ['image', 'text']:
                     return m
             except AttributeError:
-                print self.markdown
-                if self.markdown or self.sourcecode:
+                if self.markdown or self.sourcecode or self.text:
                     return 'text'
             return 'other'
         
@@ -122,6 +121,12 @@ class Drop:
             return True
         except ClassNotFound:
             return False
+    
+    @property
+    def text(self):
+        if splitext(self.filename)[1][1:] in ['conf']:
+            return True
+        return False
 
 
 def private(f):
