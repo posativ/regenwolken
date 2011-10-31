@@ -4,84 +4,22 @@
 but it's free of charge and this can't be good! regenwolken offers an
 alternate API implementation; hosted on your own server!
 
+#### playground
+
 I've set up a server open for everyone. Simply, add `213.218.178.200 my.cl.ly`
-to your `/etc/hosts`. Items older than one day will be purged at midnight
+to your `/etc/hosts`. Items older than three days will be purged at midnight
 (only a small vserver). Happy testing!
 
-### Installation
-
-You'll need [python](http://python.org/) 2.5 or higher and easy_install (or
-pip) (e.g. `apt-get install python-setuputils`). regenwolken uses
-[GridFS](http://www.mongodb.org/display/DOCS/GridFS) as file storage backend,
-therefore you need [MongoDB](http://mongodb.org/) 1.6 or higher.
-
-    pip install pymongo werkzeug jinja2
-    # or: easy_install pymongo werkzeug jinja2
-    
-    # python2.5 users will need simplejson as well
-    pip install simplejson
+### How to use regenwolken
     
 To work as an alternative CloudApp-server, you have to edit their DNS
-*my.cl.ly* to your own IP in /etc/hosts. This will not interfere with
-CloudApp-Service itself, because they're using *cl.ly* for sharing.
+*my.cl.ly* to point your own IP in /etc/hosts. This will not interfere with
+CloudApp-Service itself, because they're using *cl.ly* and *f.c.ly* for
+sharing.
 
-    > cat conf.yaml
-    hostname: my.cloud.org
-    bind_address: 0.0.0.0
-    port: 80 # or 9000 for mod_proxy
-
-    mongodb_host: 127.0.0.1
-    mongodb_port: 2701
-    
-If you want additional syntax highlighting, markdown support and image
-thumbnailing, also do `pip install pygments markdown PIL` respectively.
-
-### Setup
-
-There are two different setups: serve on port 80 as HTTP server or use a
-proxy. For the next setp, I assume you'll host regenwolken on *my.cloud.org*.
-      
-First start MongoDB via `mongod --dbpath path/to/some/folder` and edit your
-*local* machine (where you run e.g. Cloud.app) */etc/hosts* (replace 127.0.0.1
-with the desired IP):
+*/etc/hosts*
 
     127.0.0.1 my.cl.ly
-    127.0.0.1 ws.pusherapp.com # <-- stratus app will drive insane without
-
-#### as HTTP server
-
-This will setup regenwolken as primary HTTP-Server, listening on Port 80.
-Therefore, you'll need root access.
-
-- check, there is no other process on port 80
-- start MongoDB via `mongod --dbpath path/to/some/folder`
-- run `sudo python wolken.py`
-- edit /etc/hosts to
-- finally launch Cloud.app, register and then log in
-- take a test screenshot
-
-#### using lighttpd and mod_proxy
-
-Recommended way. Use some proxy-magic and run it as non-privileged user. Edit
-your /etc/lighttpd/lighttpd.conf to something like this:
-
-    $HTTP["host"] =~ "cloud.org|my.cl.ly" {
-        
-        # some other stuff related to cloud.org
-        
-        $HTTP["host"] =~ "my.cloud.org|my.cl.ly" {
-            proxy.server = ("" =>
-               (("host" => "127.0.0.1", "port" => 9000)))
-        }
-    }
-
-
-- start MongoDB via `mongod --dbpath path/to/some/folder`
-- run `python regenwolken.py` as non-privileged user
-- finally launch Cloud.app, register and log in
-- take a test screenshot
-
-#### hints
 
 You might wonder, why we ask for "my.cloud.org|my.cl.ly". Your /etc/hosts
 will resolve my.cl.ly to your server IP and requesting with the *Host* my.cl.ly,
@@ -91,10 +29,12 @@ Note: you should set a *hostname* (=domain name) in conf.yaml, where you host
 regenwolken. This will return into customized URLs, pointing directly to your
 server.
 
-### Configuration and Usage
+### Setup and Configuration
 
-See [USAGE.rst](/posativ/regenwolken/blob/master/doc/USAGE.rst) for a detailed
-instruction manual.
+There are two different setups: serve on port 80 as HTTP server or use a
+proxy. See [DEPLOYMENT.md](/posativ/regenwolken/blob/master/doc/DEPLOYMENT.md)
+for detailed instruction. For configuration details see
+[USAGE.rst](/posativ/regenwolken/blob/master/doc/USAGE.rst).
 
 ### API implementation
 
@@ -105,8 +45,11 @@ features. Below, the following are currently covered by the web interface.
     
     # -H "Accept: text/html"
     
-    /              - GET basic web interface
-    /<short_id>    - GET file or redirect from bookmark
+    /                          - GET basic web interface
+    /items/<short_id>          - GET file or redirect from bookmark
+    /items/<short_id>/filename - GET same as /items/<short_id>
+    /<short_id>                - GET viso-like file view or redirect from bookmark
+    /thumb/<short_id>          - GET thumbnail of item
 
 Thanks to [cmur2](https://github.com/cmur2) for his feature-rich
 [CLI](https://github.com/cmur2/cloudapp-cli) and help to build this service!
@@ -115,8 +58,10 @@ Thanks to [cmur2](https://github.com/cmur2) for his feature-rich
 
 #### working
 
-- Mac OS X [Cloud](http://itunes.apple.com/us/app/cloud/id417602904?mt=12&ls=1)
+- Mac OS X [Cloud.app](http://itunes.apple.com/us/app/cloud/id417602904?mt=12&ls=1)
 - [Cloudette](http://cloudetteapp.com/) – free CloudApp iPhone client, works flawlessly
+- [BlueNube](http://bluenubeapp.com/) – 1,99$ iPad client
+- [Stratus](http://www.getstratusapp.com/) – CloudApp Client for iOS (iPhone/iPad); add `127.0.0.1 ws.pusherapp.com` to /etc/hosts as well.
 - [cloudapp-cli](https://github.com/cmur2/cloudapp-cli) – commandline tool
 - [JCloudApp](https://github.com/cmur2/jcloudapp) – cross-platform Cloud.app widget in Java
 - [gloudapp](https://github.com/cmur2/gloudapp) – linux+GTK-based client
@@ -124,7 +69,6 @@ Thanks to [cmur2](https://github.com/cmur2) for his feature-rich
 #### failing clients
 
 - Windows' [FluffyApp](http://fluffyapp.com/), fails to login
-- [Stratus](http://www.getstratusapp.com/) – CloudApp Client for iOS, fails often
 
 ### Links:
 
