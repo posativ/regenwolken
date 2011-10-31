@@ -19,7 +19,7 @@
 #
 # regenwolken is a CloudApp clone, with leave the cloud in mind.
 
-__version__ = "0.3"
+__version__ = "0.4"
 
 import sys; reload(sys)
 from os.path import join, dirname
@@ -31,6 +31,7 @@ from werkzeug.wsgi import responder
 from werkzeug.http import parse_dict_header
 from werkzeug.datastructures import Authorization
 from werkzeug.utils import cached_property
+from werkzeug import SharedDataMiddleware
 
 from wolken import conf, REST, web
 
@@ -76,8 +77,8 @@ class Wolkenrequest(Request):
 
 HTML_map = Map([
     Rule('/', endpoint=web.index),
-    Rule('/login', endpoint=web.login_page, methods=['GET', 'HEAD']),
-    Rule('/login', endpoint=web.login, methods=['POST']),
+#    Rule('/login', endpoint=web.login_page, methods=['GET', 'HEAD']),
+#    Rule('/login', endpoint=web.login, methods=['POST']),
     Rule('/<short_id>', endpoint=web.drop),
     Rule('/<short_id>/<filename>', endpoint=web.show),
     Rule('/items/<short_id>/<filename>', endpoint=web.show),
@@ -113,17 +114,13 @@ def application(environ, start_response):
     return urls.dispatch(lambda f, v: f(environ, request, **v),
                          catch_http_exceptions=True)
 
+app = SharedDataMiddleware(application, {
+         '/static/': join(dirname(__file__), 'wolken/static'),
+         '/images/': join(dirname(__file__), 'wolken/static/images')
+})
 
 if __name__ == '__main__':
     from werkzeug.serving import run_simple
-    from werkzeug import SharedDataMiddleware
-
-    if True:
-        app = SharedDataMiddleware(application, {
-            '/static/': join(dirname(__file__), 'wolken/static'),
-            '/images/': join(dirname(__file__), 'wolken/static/images')
-        })
-
 
     run_simple(conf.BIND_ADDRESS, conf.PORT,
                app, use_reloader=True)
