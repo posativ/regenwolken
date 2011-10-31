@@ -4,10 +4,7 @@
 # Copyright 2011 posativ <info@posativ.org>. All rights reserved.
 # License: BSD Style, 2 clauses.
 
-# TODO: hashing passwords + salt
-# TODO: rework json Item generation and feature updated_at timestamp
-
-__version__ = "0.3"
+__version__ = "0.4"
 
 from os import urandom
 from random import choice, getrandbits

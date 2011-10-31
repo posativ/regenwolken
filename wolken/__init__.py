@@ -4,14 +4,13 @@
 # Copyright 2011 posativ <info@posativ.org>. All rights reserved.
 # License: BSD Style, 2 clauses.
 
-__version__ = "0.3"
+__version__ = "0.4"
 
 import sys
 import time
 from uuid import uuid4
 import random
 import string
-
 
 class Config():
     """stores conf.yaml, regenwolken has these config values:

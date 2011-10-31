@@ -19,7 +19,7 @@
 #
 # regenwolken is a CloudApp clone, with leave the cloud in mind.
 
-__version__ = "0.3"
+__version__ = "0.4"
 
 import sys; reload(sys)
 sys.setdefaultencoding('utf-8')
