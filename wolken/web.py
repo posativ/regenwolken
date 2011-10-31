@@ -110,7 +110,7 @@ class Drop:
     
     @property
     def markdown(self):
-        return True if splitext(self.filename)[1][1:] in ['txt', 'md', 'mdown', 'markdown'] else False
+        return True if splitext(self.filename)[1][1:] in ['md', 'mdown', 'markdown'] else False
     
     @property
     def sourcecode(self):
