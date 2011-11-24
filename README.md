@@ -6,7 +6,7 @@ alternate API implementation; hosted on your own server!
 
 #### playground
 
-I've set up a server open for everyone. Simply, add `213.218.178.200 my.cl.ly`
+I've set up a server open for everyone. Simply, add `91.203.213.54 my.cl.ly`
 to your `/etc/hosts`. Items older than three days will be purged at midnight
 (only a small vserver). Happy testing!
 
@@ -74,4 +74,5 @@ Thanks to [cmur2](https://github.com/cmur2) for his feature-rich
 
 - [rixth/raincloud](https://github.com/rixth/raincloud) – a (full?) cloud
   implementation written in node.js
-- [short description in my blog](https://blog.posativ.org/2011/regenwolken-hosting-cloudapp-on-your-own-server/)
+- [short description in my blog](http://blog.posativ.org/2011/regenwolken-hosting-cloudapp-on-your-own-server/)
+
