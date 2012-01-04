@@ -7,7 +7,7 @@ the WSGI framework [werkzeug][2], the [jinja2][3] templating engine and
 
 On a debian-like system run:
 
-    apt-get install python python-setuputils mongodb
+    apt-get install python python-dev mongodb
 
 and then
 
