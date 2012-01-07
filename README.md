@@ -6,7 +6,7 @@ alternate API implementation; hosted on your own server!
 
 #### playground
 
-I've set up a server open for everyone. Simply, add `91.203.213.54 my.cl.ly`
+I've set up a server open for everyone. Simply, add `213.218.178.67 my.cl.ly`
 to your `/etc/hosts`. Items older than three days will be purged at midnight
 (only a small vserver). Happy testing!
 
