@@ -36,43 +36,10 @@ from werkzeug import SharedDataMiddleware
 from wolken import conf, REST, web
 
 
-def parse_authorization_header(value):
-    """make nc and cnonce optional, see https://github.com/mitsuhiko/werkzeug/pull/100"""
-    if not value:
-        return
-    try:
-        auth_type, auth_info = value.split(None, 1)
-        auth_type = auth_type.lower()
-    except ValueError:
-        return
-    if auth_type == 'basic':
-        try:
-            username, password = auth_info.decode('base64').split(':', 1)
-        except Exception:
-            return
-        return Authorization('basic', {'username': username,
-                                       'password': password})
-    elif auth_type == 'digest':
-        auth_map = parse_dict_header(auth_info)
-        for key in 'username', 'realm', 'nonce', 'uri', 'response':
-            if not key in auth_map:
-                return
-        if 'qop' in auth_map:
-            if not auth_map.get('nc') or not auth_map.get('cnonce'):
-                return
-        return Authorization('digest', auth_map)
-
-
 class Wolkenrequest(Request):
     """fixing HTTP Digest Auth fallback"""
     # FIXME: Cloud.app can not handle 413 Request Entity Too Large
     max_content_length = conf.MAX_CONTENT_LENGTH
-
-    @cached_property
-    def authorization(self):
-        """The `Authorization` object in parsed form."""
-        header = self.environ.get('HTTP_AUTHORIZATION')
-        return parse_authorization_header(header)
 
 
 HTML_map = Map([
