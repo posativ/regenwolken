@@ -19,7 +19,7 @@
 #
 # regenwolken is a CloudApp clone, with leave the cloud in mind.
 
-__version__ = "0.4"
+__version__ = '0.4'
 
 import sys; reload(sys)
 from os.path import join, dirname
