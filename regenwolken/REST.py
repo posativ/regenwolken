@@ -22,7 +22,7 @@ except ImportError:
 
 from werkzeug.wrappers import Response
 from werkzeug.utils import secure_filename
-from wolken import Sessions, conf, Struct
+from regenwolken import Sessions, conf, Struct
 
 from pymongo import Connection, DESCENDING
 from pymongo.errors import DuplicateKeyError
@@ -34,7 +34,7 @@ db = Connection(conf.MONGODB_HOST, conf.MONGODB_PORT)[conf.MONGODB_NAME]
 db.items.create_index('short_id')
 db.accounts.create_index('email')
 
-from wolken.mongonic import GridFS
+from regenwolken.mongonic import GridFS
 fs = GridFS(db)
 
 def Item(obj, **kw):
@@ -268,11 +268,11 @@ def account_stats(environ, request):
 
     d = {'items': len(items), 'views': views}
     return Response(json.dumps(d), 200, content_type='application/json; charset=utf-8')
-    
+
 
 def view_domain(environ, request, domain):
     '''returns conf.HOSTNAME. Always.'''
-    
+
     return Response('{"home_page": "http://%s"}' % conf.HOSTNAME,
                      200, content_type='application/json; charset=utf-8')
 
@@ -453,18 +453,18 @@ def modify_item(environ, request, objectid):
     db.items.save(item)
     item = fs.get(item['_id'])
     return Response(json.dumps(Item(item)), 200, content_type='application/json; charset=utf-8')
-    
+
 
 @login
 def trash_items(environ, request):
     '''no official API call yet.  Trash items marked as deleted. Usage:
     curl -u user:pw --digest -H "Accept: application/json" -X POST http://my.cl.ly/items/trash'''
-    
+
     empty = db.items.find({'account': request.authorization.username,
                           'deleted_at': {'$ne': None}})
     for item in empty:
         fs.delete(item)
-    
+
     return Response(status=200)
 
 

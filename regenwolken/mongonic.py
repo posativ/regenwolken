@@ -6,7 +6,7 @@
 
 __version__ = "0.4"
 
-from wolken import Struct
+from regenwolken import Struct
 from pymongo.errors import DuplicateKeyError
 import gridfs
 
@@ -28,7 +28,7 @@ class GridFS:
 
     def put(self, data, _id, content_type, filename, **kw):
         '''upload file-only. Can not handle bookmarks.'''
-        
+
         if _id in ['thumb', 'items', 'login']:
             raise DuplicateKeyError
 
@@ -74,14 +74,14 @@ class GridFS:
     def update(self, _id, **kw):
         '''update **kw'''
         self.mdb.update({'_id': _id}, {'$set': kw}, upsert=False)
-        
+
     def inc_count(self, _id):
         '''find and increase view_counter'''
         self.mdb.update({'_id': _id}, {'$inc': {'view_counter': 1}})
-        
+
     def delete(self, item):
         '''remove item from gridfs and db.items'''
-        
+
         if item['item_type'] != 'bookmark':
             self.gfs.delete(item['_id'])
         self.mdb.remove(item['_id'])

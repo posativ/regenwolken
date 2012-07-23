@@ -17,14 +17,14 @@ from werkzeug import Response
 from werkzeug.contrib.cache import SimpleCache
 cache = SimpleCache(30*60)
 
-from wolken import conf
-from wolken.mongonic import GridFS
-from wolken.REST import prove_auth, Item
+from regenwolken import conf, errors
+from regenwolken.mongonic import GridFS
+from regenwolken.REST import prove_auth, Item
 from pymongo import Connection
 from gridfs.errors import NoFile
 
 from jinja2 import Environment, PackageLoader
-jinenv = Environment(loader=PackageLoader('wolken', 'layouts'))
+jinenv = Environment(loader=PackageLoader('regenwolken', 'layouts'))
 
 db = Connection(conf.MONGODB_HOST, conf.MONGODB_PORT)[conf.MONGODB_NAME]
 fs = GridFS(db)
@@ -58,14 +58,11 @@ except ImportError:
     import StringIO
 
 
-class ThumbnailException(Exception): pass
-
-
 class Drop:
     '''Drop class which renders item-specific layouts.'''
-    
+
     def __init__(self, drop):
-        
+
         def guess_type(url):
             try:
                 m = mimetypes.guess_type(url)[0].split('/')[0]
@@ -75,7 +72,7 @@ class Drop:
                 if self.markdown or self.sourcecode or self.text:
                     return 'text'
             return 'other'
-        
+
         self.__dict__.update(Item(drop))
         self.read, self.length = drop.read, drop.length
         self.filename, self.short_id = drop.filename, drop.short_id
@@ -83,11 +80,11 @@ class Drop:
         self.url = self.__dict__['content_url']
 
     def __str__(self):
-        
+
         if self.item_type == 'image':
             tt = jinenv.get_template('image.html')
             return tt.render(drop=self)
-        
+
         elif self.item_type == 'text':
             tt = jinenv.get_template('text.html')
             rv = cache.get('text-'+self.short_id)
@@ -106,22 +103,22 @@ class Drop:
         else:
             tt = jinenv.get_template('other.html')
             return tt.render(drop=self)
-    
+
     @property
     def markdown(self):
         return True if splitext(self.filename)[1][1:] in ['md', 'mdown', 'markdown'] else False
-    
+
     @property
     def sourcecode(self):
         try: ClassNotFound
         except NameError: return False
-        
+
         try:
             get_lexer_for_filename(self.filename)
             return True
         except ClassNotFound:
             return False
-    
+
     @property
     def text(self):
         if splitext(self.filename)[1][1:] in ['conf']:
@@ -168,27 +165,27 @@ def login_page(environ, response):
 def login(environ, response):
 
     return Response('See there', 301, headers={'Location': '/'})
-    
+
 
 def drop(environ, response, short_id):
-    
+
     tt = jinenv.get_template('layout.html')
     try:
         drop = fs.get(short_id=short_id)
     except NoFile:
         return Response('Not Found', 404)
-        
+
     if drop.item_type == 'bookmark':
         return Response('Moved Temporarily', 302, headers={'Location': drop.redirect_url})
-    
+
     return Response(tt.render(drop=Drop(drop)), 200, content_type='text/html')
-    
+
 
 def thumbnail(fp, size=128, bs=2048):
     """generate png thumbnails"""
 
     p = ImageFile.Parser()
-    
+
     try:
         while True:
             s = fp.read(bs)
@@ -203,7 +200,7 @@ def thumbnail(fp, size=128, bs=2048):
         op.seek(0)
         return op.read().encode('base64')
     except IOError:
-        raise ThumbnailException
+        raise errors.ThumbnailException
 
 
 @private
@@ -230,10 +227,10 @@ def show(environ, request, short_id, filename):
 def thumb(environ, request, short_id):
     """returns 128px thumbnail, when possible and cached for 30 minutes,
     otherwise item_type icons."""
-    
+
     th = cache.get('thumb-'+short_id)
     if th: return Response(standard_b64decode(th), 200, content_type='image/png')
-    
+
     try:
         rv = fs.get(short_id=short_id)
     except NoFile:
@@ -244,7 +241,8 @@ def thumb(environ, request, short_id):
             th = thumbnail(rv)
             cache.set('thumb-'+short_id, th)
             return Response(standard_b64decode(th), 200, content_type='image/png')
-        except ThumbnailException:
+        except errors.ThumbnailException:
             pass
     return Response(open('wolken/static/images/item_types/%s.png' % rv.item_type),
                     200, content_type='image/png')
+

@@ -24,10 +24,10 @@ class Config():
         - MAX_CONTENT_LENGTH: maximum content length before raising 413
         - ALLOW_PRIVATE_BOOKMARKS: True | False
         - PUBLIC_REGISTRATION: instant registration, True | False
-        
+
         - CACHE_BACKEND: SimpleCache
         - CACHE_TIMEOUT: 15*60
-        
+
         - THUMBNAILS: True
         - SYNTAX_HIGHLIGHTING: True
         - MARKDOWN_FORMATTING: True
@@ -41,20 +41,20 @@ class Config():
         self.MONGODB_HOST = "127.0.0.1"
         self.MONGODB_PORT = 27017
         self.MONGODB_NAME = 'cloudapp'
-        
+
         self.ALLOWED_CHARS = string.digits + string.ascii_letters + '.- @'
         self.MAX_CONTENT_LENGTH = 1024*1024*64
         self.ALLOW_PRIVATE_BOOKMARKS = False
         self.PUBLIC_REGISTRATION = False
         self.SHORT_ID_MIN_LENGTH = 3
-        
+
         self.CACHE_BACKEND = 'SimpleCache'
         self.CACHE_TIMEOUT = 15*60
-        
+
         self.THUMBNAILS = True
         self.SYNTAX_HIGHLIGHTING = True
         self.MARKDOWN_FORMATTING = True
-        
+
         for line in open('conf.yaml'):
             line = line.strip()
             if line and not line.startswith('#'):
@@ -78,10 +78,6 @@ class Struct:
     """dict -> class, http://stackoverflow.com/questions/1305532/convert-python-dict-to-object"""
     def __init__(self, **entries):
         self.__dict__.update(entries)
-
-
-class NoFile(Exception): pass
-class DuplicateKeyError(Exception): pass
 
 
 class Sessions:
