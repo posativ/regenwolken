@@ -1,12 +1,14 @@
 # Copyright 2012 posativ <info@posativ.org>. All rights reserved.
 # License: BSD Style, 2 clauses.
 
+from __future__ import unicode_literals
+
 import mimetypes
 
 from time import strftime, gmtime
-from urllib import quote
 from os.path import splitext
 
+from werkzeug.urls import url_quote
 from werkzeug.utils import secure_filename
 from werkzeug.contrib.cache import SimpleCache
 cache = SimpleCache(30*60)  # XXX use redis!
@@ -74,7 +76,7 @@ def Item(obj, conf, **kw):
         x['name'] = obj.filename
         x['url'] = 'http://' + conf['HOSTNAME'] + '/' + obj.short_id
         x['content_url'] = x['url'] + '/' + secure_filename(obj.filename)
-        x['remote_url'] = x['url'] + '/' + quote(obj.filename)
+        x['remote_url'] = x['url'] + '/' + url_quote(obj.filename)
         x['thumbnail_url'] = x['url'] # TODO: thumbails
         x['redirect_url'] = None
 
@@ -176,7 +178,7 @@ class Drop:
     def markdown(self):
         rv = cache.get('text-'+self.short_id)
         if rv is None:
-            rv = markdown.markdown(self.read())
+            rv = markdown.markdown(self.read().decode('utf-8'))
             cache.set('text-'+self.short_id, rv)
         return rv
 
