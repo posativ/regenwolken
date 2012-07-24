@@ -1,33 +1,35 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 #
-# Copyright 2011 posativ <info@posativ.org>. All rights reserved.
+# Copyright 2012 posativ <info@posativ.org>. All rights reserved.
 # License: BSD Style, 2 clauses.
 
-__version__ = "0.4"
+from time import gmtime, strftime
+from random import getrandbits
 
-from regenwolken import Struct
+from gridfs import GridFS as Grid
 from pymongo.errors import DuplicateKeyError
-import gridfs
+
+from regenwolken.utils import Struct, gen
 
 
 class GridFS:
-    '''an extended GridFS (+MongoDB) backend to update metadata in a separate
+    """An extended GridFS (+MongoDB) backend to update metadata in a separate
     MongoDB but handle them in one GridOut object.
 
     As it is not documented: every attribute in GridOut is read-only. You
     can only write these `metadata` once. This extended GridFS will keep
     GridIn's _id, content_type, filename and upload_date and so on intact
-    and read-only!'''
+    and read-only!"""
 
     def __init__(self, database, collection='fs'):
-        '''shortcuts to gridFS(db) and db.items'''
+        """shortcuts to gridFS(db) and db.items"""
 
         self.mdb = database.items
-        self.gfs = gridfs.GridFS(database, collection)
+        self.gfs = Grid(database, collection)
 
     def put(self, data, _id, content_type, filename, **kw):
-        '''upload file-only. Can not handle bookmarks.'''
+        """upload file-only. Can not handle bookmarks."""
 
         if _id in ['thumb', 'items', 'login']:
             raise DuplicateKeyError
@@ -53,15 +55,15 @@ class GridFS:
         return _id
 
     def get(self, _id=None, short_id=None):
-        '''if url is given, we need a reverse lookup in metadata.  Returns
-        a GridOut/bookmark with additional metadata added.'''
+        """if url is given, we need a reverse lookup in metadata.  Returns
+        a GridOut/bookmark with additional metadata added."""
 
         if _id:
             cur = self.mdb.find_one({'_id': _id})
         else:
             cur = self.mdb.find_one({'short_id': short_id})
             if not cur:
-                raise gridfs.errors.NoFile
+                return None
             _id = cur['_id']
 
         if cur.get('item_type', '') == 'bookmark':
@@ -85,3 +87,37 @@ class GridFS:
         if item['item_type'] != 'bookmark':
             self.gfs.delete(item['_id'])
         self.mdb.remove(item['_id'])
+
+    def upload_file(self, conf, account, obj, useragent, privacy):
+
+        if obj is None:
+            return None
+
+        # XXX what's this?
+        if isinstance(privacy, (str, unicode)):
+            privacy = True if privacy == 'private' else False
+
+        timestamp = strftime('%Y-%m-%dT%H:%M:%SZ', gmtime())
+
+        if obj.filename.find(u'\x00') == len(obj.filename)-1:
+            filename = obj.filename[:-1]
+        else:
+            filename = obj.filename
+
+        _id = str(getrandbits(32))
+        retry_count = 3
+        short_id_length = conf['SHORT_ID_MIN_LENGTH']
+        while True:
+            try:
+                self.put(obj, _id=_id ,filename=filename, created_at=timestamp,
+                       content_type=obj.mimetype, account=account, view_counter=0,
+                       short_id=gen(short_id_length), updated_at=timestamp,
+                       source=useragent, private=privacy)
+                break
+            except DuplicateKeyError:
+                retry_count += 1
+                if retry_count > 3:
+                    short_id_length += 1
+                    retry_count = 1
+
+        return _id

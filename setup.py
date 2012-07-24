@@ -8,7 +8,7 @@ from os.path import join, dirname
 from setuptools import setup, find_packages
 
 version = re.search("__version__ = '([^']+)'",
-                    open('regenwolken.py').read()).group(1)
+                    open('regenwolken/__init__.py').read()).group(1)
 
 setup(
     name='regenwolken',

@@ -1,3 +1,6 @@
+{% extends "base.html" %}
+
+{% block body %}
 <header id="header">
 
   <h2>{{ drop.name | safe }}</h2>
@@ -6,11 +9,10 @@
 </header>
 
 <section class="monsoon" id="content">
-  <!-- # It might not be the best solution to force UTF-8 encoding. We"ll keep our
-      eyes open for encoding issues. -->
-  {% if drop.name.endswith('.txt') %}
-    {{ textstream }}
+  {% if drop.iscode %}
+    <pre><code>{{ textstream | safe }}</code></pre>
   {% else %}
-    <pre><code>{{ textstream }}</code></pre>
+    {{ textstream }}
   {% endif %}
 </section>
+{% endblock %}

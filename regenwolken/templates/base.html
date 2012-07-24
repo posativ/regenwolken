@@ -11,7 +11,7 @@
     <meta content="CloudApp" name="author">
 
     <link href="/images/favicon.ico" rel="shortcut icon">
-    
+
     <!-- include_stylesheets :viso -->
     <link href="/static/stylesheets/reset.css" media="screen" rel="stylesheet" type="text/css" />
     <link href="/static/stylesheets/monsoon.css" media="screen" rel="stylesheet" type="text/css" />
@@ -23,7 +23,7 @@
     <!--[if IE]>
     <link href="/stylesheets/ie.css" media="screen" rel="stylesheet" type="text/css" />
     <![endif]-->
-    
+
     <!-- include_javascripts :viso -->
     <script src="/static/javascripts/vendor/jquery-1.6.1.min.js"></script>
     <script src="/static/javascripts/vendor/modernizr-1.7.min.js"></script>
@@ -35,6 +35,7 @@
     <![endif]-->
 
   <body id="{{ drop.item_type }}">
-      {{ drop }}
+      {% block body %}
+      {% endblock %}
   </body>
 </html>
