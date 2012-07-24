@@ -142,7 +142,7 @@ class Drop:
                 if m in ['image', 'text']:
                     return m
             except AttributeError:
-                if self.markdown or self.sourcecode or self.text:
+                if self.ismarkdown or self.iscode or self.text:
                     return 'text'
             return 'other'
 
