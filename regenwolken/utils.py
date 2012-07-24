@@ -143,24 +143,6 @@ class conf:
     SYNTAX_HIGHLIGHTING = True
     MARKDOWN_FORMATTING = True
 
-#         for line in open('conf.yaml'):
-#             line = line.strip()
-#             if line and not line.startswith('#'):
-#                 try:
-#                     key, value = line.split(':', 1)
-#                     key, value = key.strip(), value.strip()
-#                 except ValueError:
-#                     print >> sys.stderr, 'line is wrong `%s`' % line
-#                     sys.exit(1)
-
-#                 if value.isdigit():
-#                     value = int(value)
-#                 elif value.lower() in ['true', 'false']:
-#                     value = True if value.capitalize() == 'True' else False
-#                 self.__dict__[key.upper()] = value
-
-# conf = Config()
-
 
 def thumbnail(fp, size=128, bs=2048):
     """generate png thumbnails"""

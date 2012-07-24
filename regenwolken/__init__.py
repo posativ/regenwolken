@@ -31,10 +31,11 @@ from regenwolken import views, mongonic, utils
 
 class Regenwolken(flask.Flask):
 
-    def __init__(self, conf):
+    def __init__(self):
 
         flask.Flask.__init__(self, __name__)
-        self.config.update(conf.__dict__)
+        self.config.from_object('regenwolken.utils.conf')
+        self.config.from_pyfile('../regenwolken.cfg', silent=True)
 
         self.sessions = utils.Sessions(timeout=3600)
 
@@ -106,6 +107,5 @@ class Regenwolken(flask.Flask):
 
 if __name__ == '__main__':
 
-    app = Regenwolken(utils.conf)
-    app.debug = True
+    app = Regenwolken()
     app.run(host='0.0.0.0')
