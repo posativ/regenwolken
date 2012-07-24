@@ -17,7 +17,7 @@ setup(
     author_email='info@posativ.org',
     packages=find_packages(),
     include_package_data=True,
-    scripts=['bin/regenwolken', 'bin/regenwolkenctl'],
+    # scripts=['bin/regenwolken', 'bin/regenwolkenctl'],
     url='http://pypi.python.org/pypi/regenwolken/',
     license='BSD revised',
     description='open source, self-hosting CloudApp',
@@ -36,4 +36,8 @@ setup(
         'werkzeug>=0.8',
         'Jinja2>=2.4'
     ],
+    entry_points={
+        'console_scripts':
+            ['regenwolken = regenwolken:main']
+    },
 )

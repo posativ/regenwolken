@@ -105,7 +105,7 @@ class Regenwolken(flask.Flask):
                 self.config['THUMBNAILS'] = False
 
 
-if __name__ == '__main__':
+def main():
 
     app = Regenwolken()
     app.run(host='0.0.0.0')
