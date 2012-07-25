@@ -31,6 +31,8 @@ import re
 from datetime import timedelta, datetime
 from time import strftime, gmtime
 
+from flask import Flask
+
 from pymongo import Connection
 from gridfs import GridFS
 from gridfs.errors import NoFile
@@ -44,59 +46,26 @@ def ppsize(num):
             return "%3.2f %s" % (num, x)
         num /= 1024.0
 
-    
+
 def tdelta(input):
     """converts human-readable time deltas to datetime.timedelta.
     >>> tdelta(3w 12m) == datetime.timedelta(weeks=3, minutes=12)"""
-    
+
     keys = ['weeks', 'days', 'hours', 'minutes']
     regex = ''.join(['((?P<%s>\d+)%s ?)?' % (k, k[0]) for k in keys])
     kwargs = {}
     for k,v in re.match(regex, input).groupdict(default='0').items():
         kwargs[k] = int(v)
     return timedelta(**kwargs)
-    
-
-def parse_conf(fp):
-    '''parsing conf.yaml'''
-
-    __dict__ = {
-        'HOSTNAME': "localhost",
-        'BIND_ADDRESS': "0.0.0.0",
-        'PORT': 80,
-        'MONGODB_HOST': "127.0.0.1",
-        'MONGODB_PORT': 27017,
-        'ALLOWED_CHARS': string.digits + string.ascii_letters + '.- @',
-        'MAX_CONTENT_LENGTH': 1024*1024*64,
-        'ALLOW_PRIVATE_BOOKMARKS': False,
-        'PUBLIC_REGISTRATION': False,
-    }
-    for line in fp:
-        line = line.strip()
-        if line and not line.startswith('#'):
-            try:
-                key, value = line.split(':', 1)
-                key, value = key.strip(), value.strip()
-            except ValueError:
-                print >> sys.stderr, 'line is wrong `%s`' % line
-                sys.exit(1)
-
-            if value.isdigit():
-                value = int(value)
-            elif value.lower() in ['true', 'false']:
-                value = bool(value.capitalize())
-            __dict__[key.upper()] = value
-            
-    return __dict__
 
 
 def account(conf, options, args):
     '''View details or summary of all accounts.'''
-    
+
     con = Connection(conf['MONGODB_HOST'], conf['MONGODB_PORT'])
     db = con[conf['MONGODB_NAME']]
     fs = GridFS(db)
-    
+
     if options.all:
         query = None
     elif len(args) == 2:
@@ -128,17 +97,17 @@ def account(conf, options, args):
                 print'    size: %s' % ppsize(size)
             print '    %s: %s' % (key, acc[key])
     if options.all:  print db.accounts.count()-1, 'accounts total' # -1 for _autoinc
-    
+
     con.disconnect()
 
 
 def activate(conf, options, args):
     '''When PUBLIC_REGISTRATION is set to false, you have to activate
     registered accounts manually by invoking "activate $email"'''
-    
+
     con = Connection(conf['MONGODB_HOST'], conf['MONGODB_PORT'])
     accounts = con[conf['MONGODB_NAME']].accounts
-    
+
     if len(args) == 2:
         acc = accounts.find_one({'email': args[1]})
         if not acc:
@@ -156,55 +125,55 @@ def activate(conf, options, args):
             print 'no pending non-activated accounts'
         for acc in inactivated:
             print '%s [%s]' % (acc['email'].ljust(16), acc['created_at'])
-    
+
     con.disconnect()
 
 def info(conf):
     '''A basic, incomplete short info.  Displays overall file size and
     account counts.'''
-    
+
     con = Connection(conf['MONGODB_HOST'], conf['MONGODB_PORT'])
     db = con[conf['MONGODB_NAME']]
     fs = GridFS(db)
-    
+
     overall_file_size = sum([f['length'] for f in fs._GridFS__files.find()])
     inactivated = [acc for acc in db.accounts.find() if not acc.get('activated_at', True)]
     print fs._GridFS__files.count(), 'files [%s]' % ppsize(overall_file_size)
     print db.accounts.count()-1, 'accounts total,', len(inactivated) , 'not activated'
-    
+
     con.disconnect()
-    
+
 def purge(conf, options, args):
     '''Purges files or accounts.
-    
+
     With GNU Opts -a and/or --all a given account/all accounts are removed
     including metadata and files.
-    
+
     Given a crontab-like timedelta e.g. `3d` will remove every file older
     than 3 days including its metadata. To delete all files write `0d` or --all.'''
 
     con = Connection(conf['MONGODB_HOST'], conf['MONGODB_PORT'])
     db = con[conf['MONGODB_NAME']]
     fs = GridFS(db)
-    
+
     def delete_account(_id):
         """deletes account with _id and all his files"""
-        
+
         items = db.accounts.find_one({'_id': _id})['items']
         db.accounts.remove(_id)
-        
+
         for item in items:
             fs.delete(item)
             db.items.remove(item)
         return True
-        
+
     if options.account and not options.all and len(args) < 2:
         log.error('purge -a <_id> requires an account _id or email')
         sys.exit(1)
     elif not options.account and not options.all and len(args) < 2:
         log.error('purge <timedelta> requires a time delta')
         sys.exit(1)
-    
+
     if options.account:
         if options.all:
             yn = raw_input('delete all accounts? [y/n] ')
@@ -218,7 +187,7 @@ def purge(conf, options, args):
         else:
             query = {'_id': int(args[1])} if args[1].isdigit() else {'email': args[1]}
             query = db.accounts.find_one(query)
-            
+
             if not query:
                 log.error('no such _id or email `%s`', args[1])
                 sys.exit(1)
@@ -232,13 +201,13 @@ def purge(conf, options, args):
                 sys.exit(0)
         else:
             print 'purging files older than %s' % str(delta)[:-3]
-    
+
         now = datetime.utcnow()
         delete = []
         for obj in fs._GridFS__files.find():
             if now - delta > obj['uploadDate']:
                 delete.append(obj)
-        
+
         for cur in db.accounts.find():
             # FIXME bookmarks survive
             if str(cur['_id']).startswith('_'):
@@ -250,13 +219,13 @@ def purge(conf, options, args):
                 except ValueError:
                     pass
             db.accounts.update({'_id': _id}, {'$set': {'items': items}})
-            
+
         for obj in delete:
             fs.delete(obj['_id'])
             db.items.remove(obj['_id'])
 
     con.disconnect()
-    
+
 
 def repair(conf, options):
     '''fixes issues created by myself.  Currently, only orphan files and
@@ -265,10 +234,10 @@ def repair(conf, options):
     con = Connection(conf['MONGODB_HOST'], conf['MONGODB_PORT'])
     db = con[conf['MONGODB_NAME']]
     fs = GridFS(db)
-    
+
     objs = [obj['_id'] for obj in fs._GridFS__files.find()]
     meta = [cur['_id'] for cur in db.items.find()]
-    
+
     if objs != meta:
         # 1. metadata has some files missing, no repair possible
         diff1 = filter(lambda i: not i in objs, meta)
@@ -276,12 +245,12 @@ def repair(conf, options):
         for item in diff1:
             print 'removing metadata for `%s`' % item
             db.items.remove(item)
-        
+
         # 2. metadata is missing, but file is there. Recover possible, but not implemented #win
         for item in diff2:
             print 'removing GridFS-File `%s`' % item
             objs.remove(item)
-    
+
     # rebuild accounts items, when something changed
     for cur in db.accounts.find():
         if str(cur['_id']).startswith('_'):
@@ -294,9 +263,9 @@ def repair(conf, options):
 
 
 if __name__ == '__main__':
-    
+
     from optparse import OptionParser, make_option
-    
+
     usage = "usage: %prog [options] info|account|activate|purge|repair\n" + '\n' \
             + "  info     – provides basic information of regenwolken's MongoDB\n" \
             + "  activate – lists inactive accounts or activates given email\n" \
@@ -311,35 +280,28 @@ if __name__ == '__main__':
         make_option('--all', dest='all', action='store_true',
                     default=False, help='select ALL'),
     ]
-    
+
     parser = OptionParser(option_list=options, usage=usage)
     (options, args) = parser.parse_args()
-    
+
     log = logging.getLogger('regenwolken')
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.INFO)
-    
-    try:
-        f = open('../conf.yaml', 'r')
-    except IOError:
-        try:
-            f = open('conf.yaml', 'r')
-        except IOError:
-            print >> sys.stderr, 'could not find conf.yaml'
-            sys.exit(1)
-    
-    conf = parse_conf(f)
-    
+
+    app = Flask(__name__)
+    app.config.from_object('regenwolken.utils.conf')
+    app.config.from_pyfile('../regenwolken.cfg', silent=True)
+
     if 'info' in args:
-        info(conf)
+        info(app.config)
     elif 'account' in args:
-        account(conf, options, args)
+        account(app.config, options, args)
     elif 'activate' in args:
-        activate(conf, options, args)
+        activate(app.config, options, args)
     elif 'purge' in args:
-        purge(conf, options, args)
+        purge(app.config, options, args)
     elif 'repair' in args:
-        repair(conf, options)
+        repair(app.config, options)
     elif 'files' in args:
         pass
     else:
