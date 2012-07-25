@@ -17,12 +17,14 @@ setup(
     author_email='info@posativ.org',
     packages=find_packages(),
     include_package_data=True,
+    zip_safe=False,
     # scripts=['bin/regenwolken', 'bin/regenwolkenctl'],
     url='http://pypi.python.org/pypi/regenwolken/',
     license='BSD revised',
     description='open source, self-hosting CloudApp',
     data_files=[
         'README.md',
+        'LICENSE.txt'
     ],
     long_description=open(join(dirname(__file__), 'README.md')).read(),
     classifiers=[
@@ -33,8 +35,8 @@ setup(
         "Programming Language :: Python",
     ],
     install_requires=[
-        'werkzeug>=0.8',
-        'Jinja2>=2.4'
+        'flask>=0.8',
+        'pymongo'
     ],
     entry_points={
         'console_scripts':
