@@ -1,0 +1,3 @@
+include README.md LICENSE.txt
+recursive-include regenwolken/static
+recursive-include regenwolken/templates/ *
