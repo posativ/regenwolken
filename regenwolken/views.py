@@ -31,7 +31,7 @@ def index():
 
     if request.method == 'POST' and not request.accept_mimetypes.accept_html:
         if not request.form.get('key') in current_app.sessions:
-            abort(403)
+            abort(401)
 
         db, fs = current_app.db, current_app.fs
         config, sessions = current_app.config, current_app.sessions
@@ -59,7 +59,7 @@ def index():
 
 
 @login
-def account(stats=None):
+def account():
     """returns account details, and update given keys.
 
     -- http://developer.getcloudapp.com/view-account-details

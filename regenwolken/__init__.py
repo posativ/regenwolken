@@ -49,7 +49,7 @@ class Regenwolken(flask.Flask):
             ('index', '/', ['GET', 'POST']),
             ('items_view', '/<short_id>', ['GET']),
 
-            ('account', '/account/', ['PUT', 'GET']),
+            ('account', '/account', ['PUT', 'GET']),
             ('account_stats', '/account/stats', ['GET', ]),
 
             ('register', '/register', ['POST', ]),
