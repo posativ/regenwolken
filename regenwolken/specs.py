@@ -187,7 +187,7 @@ class Drop:
         rv = cache.get('text-'+self.short_id)
         if rv is None:
             rv = highlight(
-                self.read(),
+                self.read().decode('utf-8'),
                 get_lexer_for_filename(self.url),
                 HtmlFormatter(lineos=False, cssclass='highlight')
             )
