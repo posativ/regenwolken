@@ -108,4 +108,8 @@ class Regenwolken(flask.Flask):
 def main():
 
     app = Regenwolken()
+
+    if '--debug' in sys.argv:
+        app.debug = True
+
     app.run(host='0.0.0.0')
