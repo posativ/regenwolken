@@ -19,7 +19,7 @@ from regenwolken.specs import Item, Account, Drop
 
 
 def index():
-    """upload file, when authorized with `key`
+    """Upload a file, when the client has a valid session key.
 
     -- http://developer.getcloudapp.com/upload-file"""
 
@@ -54,14 +54,14 @@ def index():
 
 @login
 def account():
-    """returns account details, and update given keys.
+    """Return account details and/or update given keys.
 
     -- http://developer.getcloudapp.com/view-account-details
     -- http://developer.getcloudapp.com/change-default-security
     -- http://developer.getcloudapp.com/change-email
     -- http://developer.getcloudapp.com/change-password
 
-    PUT: accepts every new password (stored in plaintext) and like /register
+    PUT: accepts every new password (stored in plaintext) and similar to /register
     no digit-only "email" address is allowed."""
 
     conf, db = current_app.config, current_app.db
@@ -113,7 +113,7 @@ def account():
 
 @login
 def account_stats():
-    """view account's item count and overall views.
+    """Show current item count and other statistics.
 
     -- http://developer.getcloudapp.com/view-account-stats"""
 
@@ -128,7 +128,7 @@ def account_stats():
 
 @login
 def items():
-    """list items from user.  Optional query parameters:
+    """Show items from user.  Optional query parameters:
 
             - page (int)     - default: 1
             - per_page (int) - default: 5
@@ -173,7 +173,7 @@ def items():
 
 @login
 def items_new():
-    """generates a new key for upload process.  Timeout after 60 minutes!
+    """Generates a new key for the upload process.  Timeout after 60 minutes!
 
     -- http://developer.getcloudapp.com/upload-file
     -- http://developer.getcloudapp.com/upload-file-with-specific-privacy"""
@@ -199,9 +199,8 @@ def items_new():
 
 
 def items_view(short_id):
-    """Implements: View Item.  http://developer.getcloudapp.com/view-item.
-    Only via `Accept: application/json` accessible, returns 404 Not Found, if
-    URL does not exist.
+    """View item details or show them in the web interface based on Accept-Header or
+    returns 404 if the requested short_id does not exist.
 
     -- http://developer.getcloudapp.com/view-item"""
 
@@ -305,7 +304,7 @@ def blob(short_id, filename):
 
 @login
 def trash():
-    """no official API call yet.  Trash items marked as deleted. Usage:
+    """No official API call yet.  Trash items marked as deleted. Usage:
     curl -u user:pw --digest -H "Accept: application/json" -X POST http://my.cl.ly/items/trash"""
 
     empty = current_app.db.items.find(
@@ -314,12 +313,13 @@ def trash():
     for item in empty:
         current_app.fs.delete(item)
 
-    return ('', 200)
+    return '', 200
 
 
 def register():
-    """Allows (instant) registration of new users.  Invokes Account() and
-    is saved directly into database. No digits-only usernames are allowed.
+    """Registration of new users (no digits-only usernames are allowed), if
+    PUBLIC_REGISTRATION is set to True new accounts are instantly activated. Otherwise
+    you have to do it manually via `manage.py activate $USER`.
 
     -- http://developer.getcloudapp.com/register"""
 
@@ -359,7 +359,8 @@ def register():
 
 @login
 def bookmark():
-    """url shortening.
+    """Yet another URL shortener. This implementation prefixes bookmarks with
+    a dash (-) so
 
     -- http://developer.getcloudapp.com/bookmark-link"""
 
