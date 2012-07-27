@@ -97,9 +97,15 @@ def private(f):
     return check
 
 
-def gen(length=8, charset=string.ascii_lowercase+string.digits):
+def slug(length=8, charset=string.ascii_lowercase+string.digits):
     """generates a pseudorandom string of a-z0-9 of given length"""
     return ''.join([choice(charset) for x in xrange(length)])
+
+
+def clear(account):
+    for key in '_id', 'items', 'passwd':
+        account.pop(key, None)
+    return account
 
 
 class conf:

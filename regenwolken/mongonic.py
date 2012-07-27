@@ -10,7 +10,7 @@ from random import getrandbits
 from gridfs import GridFS as Grid
 from pymongo.errors import DuplicateKeyError
 
-from regenwolken.utils import Struct, gen
+from regenwolken.utils import Struct, slug
 
 
 class GridFS:
@@ -111,7 +111,7 @@ class GridFS:
             try:
                 self.put(obj, _id=_id ,filename=filename, created_at=timestamp,
                        content_type=obj.mimetype, account=account, view_counter=0,
-                       short_id=gen(short_id_length), updated_at=timestamp,
+                       short_id=slug(short_id_length), updated_at=timestamp,
                        source=useragent, private=privacy)
                 break
             except DuplicateKeyError:

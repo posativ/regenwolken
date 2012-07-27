@@ -14,14 +14,8 @@ from werkzeug import Response
 from pymongo import DESCENDING
 from flask import request, abort, jsonify, json, current_app, render_template, redirect
 
-from regenwolken.utils import login, private, A1, gen, thumbnail
+from regenwolken.utils import login, private, A1, slug, thumbnail, clear
 from regenwolken.specs import Item, Account, Drop
-
-
-def clear(account):
-    for key in '_id', 'items', 'passwd':
-        account.pop(key, None)
-    return account
 
 
 def index():
@@ -378,10 +372,10 @@ def bookmark():
 
         _id = str(getrandbits(32))
         retry_count = 1
-        short_id_length = conf.SHORT_ID_MIN_LENGTH
+        short_id_length = conf['SHORT_ID_MIN_LENGTH']
 
         while True:
-            short_id = gen(short_id_length)
+            short_id = slug(short_id_length)
             if not db.items.find_one({'short_id': short_id}):
                 break
             else:
@@ -394,7 +388,7 @@ def bookmark():
             'account': request.authorization.username,
             'name': name,
             '_id': _id,
-            'short_id': gen(short_id_length),
+            'short_id': slug(short_id_length),
             'redirect_url': redirect_url,
             'item_type': 'bookmark',
             'view_counter': 0,
