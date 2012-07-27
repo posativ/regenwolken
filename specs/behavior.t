@@ -79,6 +79,17 @@ So now back to some basic stuff. Try to change our password to a more difficult 
   $ (curl -sI -u foo:123456 --digest http://localhost/items | grep FORBIDDEN)
   [1]
 
+Try the URL shortening service.
+
+  $ URL=$(cloudapp bookmark foo http://google.com/ | tail -n 1)
+  $ cloudapp list --disable-colors
+  SLUG       p=private, d=deleted
+  \w+        -- unknown   [^ ]+ [^ ]+ http://localhost/\w+        README.md (re)
+  \w+        -- bookmark  [^ ]+ [^ ]+ http://localhost/\w+        http://google.com/ -> foo (re)
+
+  $ curl -Is $URL | head -n 1
+  HTTP/1.0 302 FOUND
+
 End this madness...
 
   $ kill -9 $PID

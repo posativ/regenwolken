@@ -405,7 +405,7 @@ def bookmark():
             'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         }
 
-        item = Item(x)
+        item = Item(x, conf)
         db.items.insert(x)
 
         items = acc['items']

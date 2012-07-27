@@ -56,6 +56,7 @@ class Regenwolken(flask.Flask):
             ('domains', '/domains/<domain>', ['GET', ]),
 
             ('items', '/items', ['GET', ]),
+            ('bookmark', '/items', ['POST', ]),
             ('items_new', '/items/new', ['HEAD', 'GET']),
             ('items_edit', '/items/<object_id>', ['HEAD', 'PUT', 'DELETE']),
 
