@@ -205,40 +205,34 @@ def items_view(short_id):
     -- http://developer.getcloudapp.com/view-item"""
 
     db, fs = current_app.db, current_app.fs
+    obj = fs.get(short_id=short_id)
 
-    if short_id.startswith('-'):
-        cur = db.items.find_one({'short_id': short_id})
-        if not cur:
-            abort(404)
+    if obj is None:
+        abort(404)
 
-        if request.accept_mimetypes.accept_html:
-            return redirect(cur.redirect_url)
-        return jsonify(Item(cur, current_app.config))
-    else:
-        obj = fs.get(short_id=short_id)
-        if obj is None:
-            abort(404)
+    if request.accept_mimetypes.accept_html:
 
-        if request.accept_mimetypes.accept_html:
+        if obj.item_type == 'bookmark':
+            return redirect(obj.redirect_url)
 
-            drop = Drop(obj, current_app.config)
-            if drop.item_type == 'image':
-                return render_template('image.html', drop=drop)
+        drop = Drop(obj, current_app.config)
+        if drop.item_type == 'image':
+            return render_template('image.html', drop=drop)
 
-            elif drop.item_type == 'text' or drop.istext:
+        elif drop.item_type == 'text' or drop.istext:
 
-                if drop.ismarkdown and current_app.config['MARKDOWN_FORMATTING']:
-                    res = drop.markdown
-                elif drop.iscode and current_app.config['SYNTAX_HIGHLIGHTING']:
-                    res = drop.code
-                else:
-                    res = drop.read()
-
-                return render_template('text.html', drop=drop, textstream=res)
-
+            if drop.ismarkdown and current_app.config['MARKDOWN_FORMATTING']:
+                res = drop.markdown
+            elif drop.iscode and current_app.config['SYNTAX_HIGHLIGHTING']:
+                res = drop.code
             else:
-                return render_template('other.html', drop=drop)
-        return jsonify(Item(obj, current_app.config))
+                res = drop.read()
+
+            return render_template('text.html', drop=drop, textstream=res)
+
+        else:
+            return render_template('other.html', drop=drop)
+    return jsonify(Item(obj, current_app.config))
 
 
 @login
