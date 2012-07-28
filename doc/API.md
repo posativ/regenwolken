@@ -39,7 +39,7 @@ regenwolken currently supports (see <http://developer.getcloudapp.com/>):
 - [Empty Trash](http://developer.getcloudapp.com/empty-trash) – remove items
   marked as deleted. No official API call yet. Derieved from Ajax POST in
   webinterface. Usage with [curl](http://curl.haxx.se/):
-  
+
   `curl -u user:pw --digest -H "Accept: application/json" -X POST http://my.cl.ly/items/trash`
 
 ## Overview
@@ -77,12 +77,6 @@ item private, the hash will change in something like this
 your private items requires authentication. Only when you know the
 credentials, you have access to your private data.
 
-Another thing are *bookmarks* and *files*. I decided, to use [Heise][2]'s (a
-popular german site) link scheme: host.tld/-mylink, notice the dash. Files
-have no dash in front. regenwolken also does not need an email-address to
-register (but most clients force you to do so), alphanumeric names without @
-and . are supported, by default.
-
 ### upload-file (with given privacy)
 
 CloudApp uses [Heroku][3] and [S3][4] as their database and storage backend.
@@ -109,7 +103,7 @@ timeout after 60 minutes per default), your upload is valid.
     409 Conflict     - account not activated
     413 Request Entity Too Large - our size limit is 64 MiB
     422 Unprocessable Entity - username or password not allowed
-    
+
 ### HTTP Digest Authentication
 
 CloudApp Network uses digest authentication to prevent sending passwords as
