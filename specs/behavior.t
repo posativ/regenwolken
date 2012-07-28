@@ -90,6 +90,13 @@ Try the URL shortening service.
   $ curl -Is $URL | head -n 1
   HTTP/1.0 302 FOUND
 
+Minors
+
+  $ curl -s http://my.cl.ly/domains/foo.bar
+  {
+    "home_page": "http://localhost"
+  } (no-eol)
+
 End this madness...
 
   $ kill -9 $PID
