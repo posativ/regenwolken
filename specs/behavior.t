@@ -3,19 +3,20 @@ Testing MANIFEST.in
   $ [ -n "$PYTHON" ] || PYTHON="`which python`"
   $ LANG="de_DE.UTF-8" && unset LC_ALL && unset LANGUAGE
   $ PREFIX="`python -c 'import sys; print sys.prefix'`"
-  $ echo "y" | manage.py purge -a --all
+  $ LOGFILE="/tmp/rw.log"
+  $ echo "y" | rwctl purge -a --all
   delete all accounts? [y/n] deleting ? accounts (glob)
 
 Does it actually works?
 
-  $ regenwolken > /dev/null 2>&1 &
+  $ regenwolken > $LOGFILE 2>&1 &
   $ PID=$!
 
   $ cloudapp -y register foo 1234
   Successfully registered but your account isn't currently activated.
   Saving login to local login storage .+ (re)
 
-  $ manage.py activate foo
+  $ rwctl activate foo
   `foo` activated
 
   $ echo "Hello World" > README.md

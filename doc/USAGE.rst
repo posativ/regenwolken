@@ -1,79 +1,80 @@
-conf.yaml
-=========
+Configuration
+=============
 
-It is *no* real YAML, just enough to configure regenwolken. This is the
-current default conf.yaml:
+You can configure regenwolken by a python configuration file `regenwolken.cfg` and/or
+override parameters via environment variables. Here is a listing of all possible values::
 
-::
+    HOSTNAME = "localhost"
+    BIND_ADDRESS = "0.0.0.0"
+    PORT = 80
+    MONGODB_HOST = "127.0.0.1"
+    MONGODB_PORT = 27017
+    MONGODB_NAME = 'cloudapp'
+    MONGODB_SESSION_SIZE = 100*1024
 
-    # conf.yaml for regenwolken
+    ALLOWED_CHARS = string.digits + string.ascii_letters + '.- @'
+    MAX_CONTENT_LENGTH = 64*1024*1024
+    ALLOW_PRIVATE_BOOKMARKS = False
+    PUBLIC_REGISTRATION = False
+    SHORT_ID_MIN_LENGTH = 3
 
-    hostname: localhost
-    bind_address: 0.0.0.0
-    port: 80
+    CACHE_BACKEND = 'SimpleCache'
+    CACHE_TIMEOUT = 15*60
 
-    mongodb_host: 127.0.0.1
-    mongodb_port: 27017
-    mongodb_name: cloudapp
+    THUMBNAILS = True
+    SYNTAX_HIGHLIGHTING = True
+    MARKDOWN_FORMATTING = True
 
-    max_content_length: 62914560
-    allowed_chars: 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.- @
-    allow_private_bookmarks: false
-    public_registration: false
-    short_id_min_length: 3
-
-hostname
+HOSTNAME
     only used (and important) for URL generation to point to your own server
     instead of *cl.ly*.
-bind_address
+BIND_ADDRESS
     ip address to bind to: 0.0.0.0 binds to all interfaces, 127.0.0.1 to
-    localhost only.
-port
-    port to listen. Note: ports < 1024 require regenwolken to run as root.
+    localhost. Only needed when run via ``regenwolken``.
+PORT
+    port to listen. Note: ports < 1024 require regenwolken to run as root. Only
+    needed when run via ``regenwolken``.
 
-mongodb_host
-    MongoDB host, defaults to local server.
-mongodb_port
-    MongoDB port, defaults to default port.
-mongodb_name
-    MongoDB database name to use.
+MONGODB_SESSION_SIZE
+    Set collection size for sessions to N bytes. Increase if you experience 401
+    when uploading files.
 
-max_content_length
-    global maximum request size before 413 Request Entity Too Large is
-    returned, default: 64 megabytes.
-allowed_chars
-    allowed chars in email address.
-allow_private_bookmarks
-    allows bookmarks upload or marked as private. Only affects new uploaded
+ALLOWED_CHARS
+    Allowed chars in email address.
+MAX_CONTENT_LENGTH
+    Global maximum request size before 413 Request Entity Too Large is
+    raised, default is 64 megabytes.
+ALLOW_PRIVATE_BOOKMARKS
+    Allows bookmarks upload or marked as private. Only affects new uploaded
     bookmarks. Private bookmarks requires authentication on redirect, as well.
-public_registration
-    allow instant registration of accounts. If set to false, you have to
-    manually activate accounts using ``bin/manage.py activate $email``
-short_id_min_length
-    minimum length of the short_id link (e.g. http://example.org/af3d). Retries
+PUBLIC_REGISTRATION
+    Allows instant registration of new accounts. If set to false, you have to
+    manually activate accounts by invoking ``bin/manage.py activate $email``
+SHORT_ID_MIN_LENGTH
+    Minimum length of the short_id link (e.g. http://example.org/af3d). Retries
     three times to generate a non-existing random id before length
     is incremented by 1.
-    
-thumbnails
+
+THUMBNAILS
     dis/enables thumbnail rendering of (by PIL) known images.
-syntax_highlighting
+SYNTAX_HIGHLIGHTING
     dis/enables pygments powered syntax highlighting. If you remove this
     dependency, regenwolken is not able to recognize sourcecode file extensions
     as text-type.
-markdown_formatting
+MARKDOWN_FORMATTING
     dis/enables markdown formatting of files ending with .md, .mkdown, .markdown
 
 
-bin/manage.py
-=============
+rwctl
+=====
 
-``manage.py`` is a small python script to provide some basic maintenance and
-administration. Usage: ``python bin/manage.py``.
+``rwctl`` is a small python script to provide some basic maintenance and
+administration.
 
 ::
 
-    $ python bin/manage.py --help
-    Usage: manage.py [options] info|account|activate|purge|repair
+    $ rwctl --help
+    Usage: rwctl [options] info|account|activate|purge|repair
 
       info     – provides basic information of regenwolken's MongoDB
       activate – lists inactive accounts or activates given email
@@ -95,21 +96,21 @@ info
     Provides basic information of regenwolken's MongoDB. Just a short summary.
 activate
     When PUBLIC_REGISTRATION is set to false, you can activate a given account
-    using ``python bin/manage.py activate myaccount`` or ommit the argument to
+    using ``rwctl activate myaccount`` or ommit the argument to
     get a list of inactive accounts.
 account
-    View details or summary of all accounts. Do ``python bin/manage.py account --all``
-    to get all accounts. ``python bin/manage.py myAccountId (or -Name)``.
+    View details or summary of all accounts. Do ``rwctl account --all``
+    to get all accounts. ``rwctl myAccountId (or -Name)``.
 files
     Not implemented yet. Details about stored files.
 purge
     Command to delete a given file, all files (updates account relations as well)
-    or account(s). ``python bin/manage.py purge --all`` deletes everything.
-    ``python bin/manage.py purge 2d`` removes all files older than 2 days (works
+    or account(s). ``rwctl purge --all`` deletes everything.
+    ``rwctl purge 2d`` removes all files older than 2 days (works
     for (m)inutes, (h)ours and (w)eeks as well. Even combined like "3d 5h").
-    
-    ``python bin/manage.py -a --all`` deletes all accounts and
-    ``python bin/manage.py -a myAccount`` a given accountname/id
+
+    ``rwctl -a --all`` deletes all accounts and
+    ``rwctl -a myAccount`` a given accountname/id
 repair
     Removes unassociated metadata or files and repairs accounts with missing
     files. Useful in developing progress.
