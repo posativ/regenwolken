@@ -4,13 +4,42 @@
 # Copyright 2012 posativ <info@posativ.org>. All rights reserved.
 # License: BSD Style, 2 clauses.
 
+from uuid import uuid4
 from time import gmtime, strftime
 from random import getrandbits
 
 from gridfs import GridFS as Grid
+from pymongo.collection import Collection
 from pymongo.errors import DuplicateKeyError
 
 from regenwolken.utils import Struct, slug
+
+
+class Sessions:
+    """A session handler using MongoDB's capped collections. If you experience
+    lots of 401 try to increase size a bit."""
+
+    def __init__(self, database, size=100*1024):
+
+        database.drop_collection('sessions')
+        self.col = Collection(database, 'sessions', create=True, capped=True, size=size)
+
+    def new(self, account):
+
+        key = uuid4().hex
+        self.col.insert({'account': account, 'key': key})
+
+        return key
+
+    def pop(self, key):
+
+        cur = self.col.find_one({'key': key})
+        if cur is None:
+            raise KeyError
+
+        self.col.remove(cur)
+
+        return cur
 
 
 class GridFS:

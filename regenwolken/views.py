@@ -24,15 +24,16 @@ def index():
     -- http://developer.getcloudapp.com/upload-file"""
 
     if request.method == 'POST' and not request.accept_mimetypes.accept_html:
-        if not request.form.get('key') in current_app.sessions:
+
+        try:
+            account = current_app.sessions.pop(request.form.get('key'))['account']
+        except KeyError:
             abort(401)
 
         db, fs = current_app.db, current_app.fs
         config, sessions = current_app.config, current_app.sessions
 
-        account = sessions.get(request.form.get('key'))['account']
         acc = db.accounts.find_one({'email': account})
-
         source = request.headers.get('User-Agent', 'Regenschirm++/1.0').split(' ', 1)[0]
         privacy = request.form.get('acl', acc['private_items'])
 

@@ -26,7 +26,7 @@ import sys
 import flask
 import pymongo
 
-from regenwolken import views, mongonic, utils
+from regenwolken import views, mongonic
 
 
 class Regenwolken(flask.Flask):
@@ -36,8 +36,6 @@ class Regenwolken(flask.Flask):
         flask.Flask.__init__(self, __name__)
         self.config.from_object('regenwolken.utils.conf')
         self.config.from_pyfile('../regenwolken.cfg', silent=True)
-
-        self.sessions = utils.Sessions(timeout=3600)
 
         self.setup_routes()
         self.setup_mongodb()
@@ -82,6 +80,7 @@ class Regenwolken(flask.Flask):
 
         self.db = con
         self.fs = mongonic.GridFS(con)
+        self.sessions = mongonic.Sessions(con)
 
     def setup_extensions(self):
 
