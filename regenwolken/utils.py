@@ -112,7 +112,9 @@ class conf:
         - BIND_ADDRESS
         - PORT
         - MONGODB_HOST
+        - MONGODB_NAME
         - MONGODB_PORT
+        - MONGODB_SESSION_SIZE: size used for the capped collection
 
         - ALLOWED_CHARS: characters allowed in username
         - MAX_CONTENT_LENGTH: maximum content length before raising 413
@@ -133,6 +135,7 @@ class conf:
     MONGODB_HOST = "127.0.0.1"
     MONGODB_PORT = 27017
     MONGODB_NAME = 'cloudapp'
+    MONGODB_SESSION_SIZE = 100*1024
 
     ALLOWED_CHARS = string.digits + string.ascii_letters + '.- @'
     MAX_CONTENT_LENGTH = 64*1024*1024

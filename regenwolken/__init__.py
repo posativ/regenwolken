@@ -80,7 +80,7 @@ class Regenwolken(flask.Flask):
 
         self.db = con
         self.fs = mongonic.GridFS(con)
-        self.sessions = mongonic.Sessions(con)
+        self.sessions = mongonic.Sessions(con, size=self.config['MONGODB_SESSION_SIZE'])
 
     def setup_extensions(self):
 
