@@ -130,8 +130,10 @@ class conf:
         """
 
     HOSTNAME = "localhost"
-    BIND_ADDRESS = "0.0.0.0"
-    PORT = 80
+    BIND_ADDRESS = "127.0.0.1"
+    PORT = 5000
+    LOGFILE = 'rw.log'
+
     MONGODB_HOST = "127.0.0.1"
     MONGODB_PORT = 27017
     MONGODB_NAME = 'cloudapp'
