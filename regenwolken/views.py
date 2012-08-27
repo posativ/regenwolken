@@ -219,18 +219,8 @@ def items_view(short_id):
         drop = Drop(obj, current_app.config)
         if drop.item_type == 'image':
             return render_template('image.html', drop=drop)
-
         elif drop.item_type == 'text' or drop.istext:
-
-            if drop.ismarkdown and current_app.config['MARKDOWN_FORMATTING']:
-                res = drop.markdown
-            elif drop.iscode and current_app.config['SYNTAX_HIGHLIGHTING']:
-                res = drop.code
-            else:
-                res = drop.read()
-
-            return render_template('text.html', drop=drop, textstream=res)
-
+            return render_template('text.html', drop=drop)
         else:
             return render_template('other.html', drop=drop)
     return jsonify(Item(obj, current_app.config))
