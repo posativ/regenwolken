@@ -189,7 +189,7 @@ def items_new():
 
 
     key = current_app.sessions.new(request.authorization.username)
-    res = { "url": request.url_root,
+    res = { "url": 'http://' + current_app.config['HOSTNAME'],
           "max_upload_size": current_app.config['MAX_CONTENT_LENGTH'],
           "params": { "acl": privacy,
                       "key": key

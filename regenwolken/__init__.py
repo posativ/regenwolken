@@ -41,7 +41,6 @@ class Regenwolken(flask.Flask):
         self.setup_routes()
         self.setup_mongodb()
         self.setup_extensions()
-        self.setup_logger()
 
     def setup_routes(self):
 
@@ -126,5 +125,7 @@ def main():
 
     if '--debug' in sys.argv:
         app.debug = True
+    else:
+        app.setup_logger()
 
     app.run(host=app.config['BIND_ADDRESS'], port=app.config['PORT'])
