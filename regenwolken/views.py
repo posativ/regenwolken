@@ -223,7 +223,7 @@ def items_view(short_id):
         drop = Drop(obj, current_app.config)
         if drop.item_type == 'image':
             return render_template('image.html', drop=drop)
-        elif drop.item_type == 'text' or drop.istext:
+        elif drop.item_type == 'text':
             return render_template('text.html', drop=drop)
         else:
             return render_template('other.html', drop=drop)
