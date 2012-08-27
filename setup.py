@@ -2,9 +2,10 @@
 # -*- encoding: utf-8 -*-
 
 import sys
+
+import os
 import re
 
-from glob import glob
 from os.path import join, dirname
 from setuptools import setup, find_packages
 
@@ -16,6 +17,11 @@ def install_data_files_hack():
     from distutils.command.install import INSTALL_SCHEMES
     for scheme in INSTALL_SCHEMES.values():
         scheme['data'] = scheme['purelib']
+
+
+def find(path):
+    for root, dirs, files in os.walk(path):
+        yield [root, [join(root, p) for p in files]]
 
 
 install_data_files_hack()
@@ -36,9 +42,7 @@ setup(
     data_files=[
         'README.md',
         'LICENSE.txt',
-        ['regenwolken/templates', glob('regenwolken/templates/*')],
-        ['regenwolken/static', glob('regenwolken/static/*')],
-    ],
+    ] + list(find('regenwolken/static/')) + list(find('regenwolken/templates/')),
     long_description=open(join(dirname(__file__), 'README.md')).read(),
     classifiers=[
         "Development Status :: 4 - Beta",

@@ -127,4 +127,4 @@ def main():
     if '--debug' in sys.argv:
         app.debug = True
 
-    app.run(host=app.config.get('BIND_ADDRESS', '0.0.0.0'), port=app.config.get('PORT', 1234))
+    app.run(host=app.config['BIND_ADDRESS'], port=app.config['PORT'])
