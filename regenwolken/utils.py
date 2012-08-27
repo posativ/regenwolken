@@ -131,7 +131,7 @@ class conf:
 
     HOSTNAME = "localhost"
     BIND_ADDRESS = "127.0.0.1"
-    PORT = 5000
+    PORT = 3000
     LOGFILE = 'rw.log'
 
     MONGODB_HOST = "127.0.0.1"
