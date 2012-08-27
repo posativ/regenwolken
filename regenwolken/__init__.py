@@ -112,4 +112,4 @@ def main():
     if '--debug' in sys.argv:
         app.debug = True
 
-    app.run(host=app.config.get('HOST', '0.0.0.0'), port=app.config.get('PORT', 1234))
+    app.run(host=app.config.get('HOSTNAME', '0.0.0.0'), port=app.config.get('PORT', 1234))
