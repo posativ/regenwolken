@@ -35,7 +35,7 @@ class Regenwolken(flask.Flask):
 
         flask.Flask.__init__(self, __name__)
         self.config.from_object('regenwolken.utils.conf')
-        self.config.from_pyfile('../regenwolken.cfg', silent=True)
+        self.config.from_envvar('REGENWOLKEN_SETTINGS', silent=True)
 
         self.setup_routes()
         self.setup_mongodb()
