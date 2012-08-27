@@ -49,24 +49,26 @@ I usually run my services with `start-stop-daemon` (Debian/Ubuntu) so I can mana
 as root but they still run in user space. The following assumes you have your configuration
 file stored in `/path/to/regenwolken/rw.cfg`.
 
-    $ cat /etc/init.d/regenwolken
-    #!/bin/sh
+```sh
+#!/bin/sh
+# location: /etc/init.d/regenwolken
 
-    NAME=regenwolken
-    CHDIR=/path/to/regenwolken/
-    USER=py
-    DAEMON_OPTS="-H ${CHDIR} --http :8012 -M --env REGENWOLKEN_SETTINGS=${CHDIR}rw.cfg -w regenwolken:Regenwolken()"
+NAME=regenwolken
+CHDIR=/path/to/regenwolken/
+USER=py
+DAEMON_OPTS="-H ${CHDIR} --http :8012 -M --env REGENWOLKEN_SETTINGS=${CHDIR}rw.cfg -w regenwolken:Regenwolken()"
 
-    case $1 in
-        start)
-        echo -n "Starting $NAME: "
-        start-stop-daemon --start --pidfile /var/run/$NAME.pid --chdir $CHDIR \
-        --chuid $USER --make-pidfile --background --exec /usr/local/bin/uwsgi -- $DAEMON_OPTS || true
-        echo "$NAME."
-           ;;
-    stop)  kill -9 $(cat /var/run/$NAME.pid)
-           ;;
-    esac
+case $1 in
+    start)
+    echo -n "Starting $NAME: "
+    start-stop-daemon --start --pidfile /var/run/$NAME.pid --chdir $CHDIR \
+    --chuid $USER --make-pidfile --background --exec /usr/local/bin/uwsgi -- $DAEMON_OPTS || true
+    echo "$NAME."
+       ;;
+stop)  kill -9 $(cat /var/run/$NAME.pid)
+       ;;
+esac
+```
 
 [5]: http://projects.unbit.it/uwsgi/
 
@@ -90,15 +92,17 @@ using lighttpd + `mod_proxy`
 Recommended way. Use some proxy-magic and run it as non-privileged user. Edit
 your /etc/lighttpd/lighttpd.conf to something like this:
 
+```perl
+$HTTP["host"] =~ "domain.tld|my.cl.ly" {
+
+    # some other stuff related to domain.tld
+
     $HTTP["host"] =~ "domain.tld|my.cl.ly" {
-
-        # some other stuff related to domain.tld
-
-        $HTTP["host"] =~ "domain.tld|my.cl.ly" {
-            proxy.server = ("" =>
-               (("host" => "127.0.0.1", "port" => 3000)))
-        }
+        proxy.server = ("" =>
+           (("host" => "127.0.0.1", "port" => 3000)))
     }
+}
+```
 
 - start mongodb via `invoke-rc.d start mongodb` (if not already running)
 - run `regenwolken` as non-privileged user
