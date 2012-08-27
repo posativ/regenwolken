@@ -39,6 +39,8 @@ BIND_ADDRESS
 PORT
     port to listen. Note: ports < 1024 require regenwolken to run as root. Only
     needed when run via ``regenwolken``.
+LOGFILE
+    destination where exception and other important events will be logged to.
 
 MONGODB_SESSION_SIZE
     Set collection size for sessions to N bytes. Increase if you experience 401

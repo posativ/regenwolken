@@ -22,6 +22,7 @@
 __version__ = '0.5'
 
 import sys
+import logging
 
 import flask
 import pymongo
@@ -40,6 +41,7 @@ class Regenwolken(flask.Flask):
         self.setup_routes()
         self.setup_mongodb()
         self.setup_extensions()
+        self.setup_logger()
 
     def setup_routes(self):
 
@@ -81,6 +83,19 @@ class Regenwolken(flask.Flask):
         self.db = con
         self.fs = mongonic.GridFS(con)
         self.sessions = mongonic.Sessions(con, size=self.config['MONGODB_SESSION_SIZE'])
+
+    def setup_logger(self):
+
+        if not self.config['DEBUG']:
+            path = self.config.get('LOGFILE', '/var/log/regenwolken.log')
+            file_handler = logging.FileHandler(path)
+            file_handler.setLevel(logging.WARNING)
+            file_handler.setFormatter(logging.Formatter(
+                '%(asctime)s %(levelname)s: %(message)s '
+                '[in %(pathname)s:%(lineno)d]'
+            ))
+
+            self.logger.addHandler(file_handler)
 
     def setup_extensions(self):
 
