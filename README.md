@@ -19,7 +19,7 @@ of choice (Debian Squeeze!).
     $ brew install mongodb
     $ mongod --dbpath foo/ &
 
-Now install Regenwolken and its dependencies:
+Now install regenwolken and its dependencies:
 
     $ easy_install regenwolken
     $ easy_install pygments PIL markdown  # optional
@@ -30,6 +30,9 @@ Modify /etc/hosts, launch regenwolken and register a new account
     $ regenwolken &
     [... open Cloud.app or another client and register a new account]
     $ rwctl activate USERNAME
+
+You can change that behavior to instantly activate new users. See the configuration
+part below.
 
 ## How to use regenwolken
 
