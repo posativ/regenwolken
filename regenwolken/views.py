@@ -213,6 +213,10 @@ def items_view(short_id):
 
     if request.accept_mimetypes.accept_html:
 
+        if obj.item_type != 'image':
+            # the browser always loads the blob, so we don't want count it twice
+            fs.inc_count(obj._id)
+
         if obj.item_type == 'bookmark':
             return redirect(obj.redirect_url)
 
