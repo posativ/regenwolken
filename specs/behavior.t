@@ -9,7 +9,7 @@ Testing MANIFEST.in
 
 Does it actually works?
 
-  $ regenwolken > $LOGFILE 2>&1 &
+  $ env REGENWOLKEN_SETTINGS="$TESTDIR/../regenwolken.cfg" regenwolken > $LOGFILE 2>&1 &
   $ PID=$!
 
   $ cloudapp -y register foo 1234
