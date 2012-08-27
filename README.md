@@ -29,7 +29,7 @@ Modify /etc/hosts, launch regenwolken and register a new account
     $ sudo echo "127.0.0.1 my.cl.ly" >> /etc/hosts
     $ regenwolken &
     [... open Cloud.app or another client and register a new account]
-    $ rwctl activate EMAIL
+    $ rwctl activate USERNAME
 
 ## How to use regenwolken
 
@@ -40,14 +40,13 @@ itself, because they are using *cl.ly* and *f.c.ly* for sharing.
     $ sudo echo "12.34.56.78 my.cl.ly" >> /etc/hosts
 
 Note: you should set a *hostname* (= your domain) in regenwolken.cfg.
-This will return into customized URLs, pointing directly to your host.
+This will return into customized URLs, pointing directly to your host,
+so others don't need to modify their hosts.
 
 ## Setup and Configuration
 
-There are two different setups: serve on port 80 as HTTP server or use a
-proxy. See [DEPLOYMENT.md](/posativ/regenwolken/blob/master/doc/DEPLOYMENT.md)
-for detailed instruction. For configuration details see
-[USAGE.rst](/posativ/regenwolken/blob/master/doc/USAGE.rst).
+See [DEPLOYMENT.md](/posativ/regenwolken/blob/master/doc/DEPLOYMENT.md) and
+[CONFIG.rst](/posativ/regenwolken/blob/master/doc/CONFIG.rst) for details.
 
 ## API implementation
 
