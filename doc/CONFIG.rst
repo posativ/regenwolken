@@ -1,8 +1,13 @@
 Configuration
 =============
 
-You can configure regenwolken by a python configuration file `regenwolken.cfg` and/or
-override parameters via environment variables. Here is a listing of all possible values::
+Regenwolken uses a python file for configuration that you can set in your environment
+variables  via ``REGENWOLKEN_SETTINGS`` like so::
+
+    $ export REGENWOLKEN_SETTINGS=/path/to/regenwolken.cfg
+    $ regenwolken &
+
+Here is a listing of all possible values::
 
     HOSTNAME = "localhost"
     BIND_ADDRESS = "0.0.0.0"
@@ -56,7 +61,7 @@ SHORT_ID_MIN_LENGTH
     is incremented by 1.
 
 THUMBNAILS
-    dis/enables thumbnail rendering of (by PIL) known images.
+    dis/enables thumbnail creation of (by PIL) known images.
 SYNTAX_HIGHLIGHTING
     dis/enables pygments powered syntax highlighting. If you remove this
     dependency, regenwolken is not able to recognize sourcecode file extensions
