@@ -137,9 +137,9 @@ class Drop:
 
     def __init__(self, drop, conf):
 
-        def guess_type(url):
+        def guess_type(filename):
             try:
-                m = mimetypes.guess_type(url)[0].split('/')[0]
+                m = mimetypes.guess_type(filename)[0].split('/')[0]
                 if m in ['image', 'text']:
                     return m
             except AttributeError:
@@ -150,7 +150,7 @@ class Drop:
         self.__dict__.update(Item(drop, conf))
         self.read, self.length = drop.read, drop.length
         self.filename, self.short_id = drop.filename, drop.short_id
-        self.item_type = guess_type(self.name)
+        self.item_type = guess_type(self.filename)
         self.url = self.__dict__['content_url']
 
     @property

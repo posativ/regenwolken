@@ -189,7 +189,7 @@ def items_new():
 
 
     key = current_app.sessions.new(request.authorization.username)
-    res = { "url": "http://my.cl.ly",
+    res = { "url": request.url_root,
           "max_upload_size": current_app.config['MAX_CONTENT_LENGTH'],
           "params": { "acl": privacy,
                       "key": key
