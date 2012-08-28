@@ -148,8 +148,7 @@ class Drop:
             return 'other'
 
         self.__dict__.update(Item(drop, conf))
-        self.read, self.length = drop.read, drop.length
-        self.filename, self.short_id = drop.filename, drop.short_id
+        self.drop = drop
         self.item_type = guess_type(self.filename)
         self.url = self.__dict__['content_url']
 
@@ -218,3 +217,6 @@ class Drop:
 
             cache.set('text-'+self.short_id, rv)
         return rv
+
+    def __getattr__(self, attr):
+        return getattr(self.drop, attr)
