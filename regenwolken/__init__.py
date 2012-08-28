@@ -42,6 +42,11 @@ class Regenwolken(flask.Flask):
         self.setup_mongodb()
         self.setup_extensions()
 
+        if '--debug' in sys.argv:
+            self.config.['DEBUG'] = True
+        else:
+            self.setup_logger()  # this circumvents issues with cram BDT
+
     def setup_routes(self):
 
         for endpoint, rule, methods in [
@@ -122,10 +127,4 @@ class Regenwolken(flask.Flask):
 def main():
 
     app = Regenwolken()
-
-    if '--debug' in sys.argv:
-        app.debug = True
-    else:
-        app.setup_logger()
-
     app.run(host=app.config['BIND_ADDRESS'], port=app.config['PORT'])
