@@ -14,7 +14,7 @@
   {% elif drop.iscode and config.SYNTAX_HIGHLIGHTING %}
     <pre><code>{{ drop.code | safe }}</code></pre>
   {% else %}
-    <pre><code>{{ drop.read() }}</code></pre>
+    <pre><code>{{ drop.read().decode("utf-8") }}</code></pre>
   {% endif %}
 </section>
 {% endblock %}

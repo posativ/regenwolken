@@ -185,7 +185,7 @@ class Drop:
         blocksize = 512
         chars = b''.join(int2byte(i) for i in range(32, 127)) + b'\n\r\t\f\b'
 
-        block = self.read(blocksize)
+        block = self.read(blocksize); self.seek(0)
         if b'\x00' in block:
             # Files with null bytes are binary
             return False
