@@ -47,7 +47,7 @@ setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "Topic :: Internet",
-        "Topic :: Internet :: WWW/HTTP :: Dynamic Content"
+        "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7"

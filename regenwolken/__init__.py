@@ -43,8 +43,9 @@ class Regenwolken(flask.Flask):
         self.setup_extensions()
 
         if '--debug' in sys.argv:
-            self.config.['DEBUG'] = True
-        else:
+            self.config['DEBUG'] = True
+
+        if not self.config['DEBUG']:
             self.setup_logger()  # this circumvents issues with cram BDT
 
     def setup_routes(self):
@@ -90,16 +91,15 @@ class Regenwolken(flask.Flask):
 
     def setup_logger(self):
 
-        if not self.config['DEBUG']:
-            path = self.config.get('LOGFILE', '/var/log/regenwolken.log')
-            file_handler = logging.FileHandler(path)
-            file_handler.setLevel(logging.WARNING)
-            file_handler.setFormatter(logging.Formatter(
-                '%(asctime)s %(levelname)s: %(message)s '
-                '[in %(pathname)s:%(lineno)d]'
-            ))
+        path = self.config.get('LOGFILE', '/var/log/regenwolken.log')
+        file_handler = logging.FileHandler(path)
+        file_handler.setLevel(logging.WARNING)
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s '
+            '[in %(pathname)s:%(lineno)d]'
+        ))
 
-            self.logger.addHandler(file_handler)
+        self.logger.addHandler(file_handler)
 
     def setup_extensions(self):
 
