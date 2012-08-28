@@ -272,7 +272,7 @@ def main():
 
     app = Flask(__name__)
     app.config.from_object('regenwolken.utils.conf')
-    app.config.from_pyfile('../regenwolken.cfg', silent=True)
+    app.config.from_envvar('REGENWOLKEN_SETTINGS', silent=True)
 
     if 'info' in args:
         info(app.config)
