@@ -30,7 +30,7 @@ except ImportError:
     markdown = None
 
 
-def Item(obj, conf, **kw):
+def Item(obj, conf, scheme='http'):
     """JSON-compatible dict representing Item.
 
         href:           used for renaming -> http://developer.getcloudapp.com/rename-item
@@ -56,12 +56,12 @@ def Item(obj, conf, **kw):
         obj = Struct(**obj)
 
     result = {
-        "href": "http://%s/items/%s" % (conf['HOSTNAME'], obj._id),
+        "href": "%s://%s/items/%s" % (scheme, conf['HOSTNAME'], obj._id),
         "private": obj.private,
         "subscribed": True,
         "item_type": obj.item_type,
         "view_counter": obj.view_counter,
-        "icon": "http://%s/images/item_types/%s.png" % (conf['HOSTNAME'], obj.item_type),
+        "icon": "%s://%s/images/item_types/%s.png" % (scheme, conf['HOSTNAME'], obj.item_type),
         "source": obj.source,
         "created_at": strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         "updated_at": strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
@@ -69,13 +69,13 @@ def Item(obj, conf, **kw):
 
     if obj.item_type == 'bookmark':
         x['name'] = obj.name
-        x['url'] = 'http://' + conf['HOSTNAME'] + '/' + obj.short_id
+        x['url'] = scheme + '://' + conf['HOSTNAME'] + '/' + obj.short_id
         x['content_url'] = x['url'] + '/content'
         x['remote_url'] = None
         x['redirect_url'] = obj.redirect_url
     else:
         x['name'] = obj.filename
-        x['url'] = 'http://' + conf['HOSTNAME'] + '/' + obj.short_id
+        x['url'] = scheme + '://' + conf['HOSTNAME'] + '/' + obj.short_id
         x['content_url'] = x['url'] + '/' + secure_filename(obj.filename)
         x['remote_url'] = x['url'] + '/' + url_quote(obj.filename)
         x['thumbnail_url'] = x['url'] # TODO: thumbails
@@ -86,12 +86,11 @@ def Item(obj, conf, **kw):
         x['updated_at'] = obj.updated_at
         x['deleted_at'] = obj.deleted_at
         if obj.deleted_at:
-            x['icon'] = "http://%s/images/item_types/trash.png" % conf['HOSTNAME']
+            x['icon'] = scheme + "://" + conf['HOSTNAME'] + "/images/item_types/trash.png"
     except AttributeError:
         pass
 
     result.update(x)
-    result.update(kw)
     return result
 
 
@@ -135,7 +134,7 @@ def Account(account, conf, **kw):
 class Drop:
     """Drop class which renders item-specific layouts."""
 
-    def __init__(self, drop, conf):
+    def __init__(self, drop, conf, scheme):
 
         def guess_type(filename):
             try:
@@ -147,7 +146,7 @@ class Drop:
                     return 'text'
             return 'other'
 
-        self.__dict__.update(Item(drop, conf))
+        self.__dict__.update(Item(drop, conf, scheme))
         self.drop = drop
         self.item_type = guess_type(self.filename)
         self.url = self.__dict__['content_url']

@@ -19,6 +19,11 @@ except ImportError:
     ImageFile = None
 
 
+def urlscheme(url):
+    """return the current scheme (HTTP or HTTPS)"""
+    return 'https' if url.startswith('https://') else 'http'
+
+
 def md5(data):
     """returns md5 of data has hexdigest"""
     return hashlib.md5(data).hexdigest()

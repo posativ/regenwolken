@@ -14,7 +14,7 @@ from werkzeug import Response
 from pymongo import DESCENDING
 from flask import request, abort, jsonify, json, current_app, render_template, redirect
 
-from regenwolken.utils import login, private, A1, slug, thumbnail, clear
+from regenwolken.utils import login, private, A1, slug, thumbnail, clear, urlscheme
 from regenwolken.specs import Item, Account, Drop
 
 
@@ -48,7 +48,7 @@ def index():
         if obj is None:
             abort(400)
         else:
-            return jsonify(Item(obj, config))
+            return jsonify(Item(obj, config, urlscheme(request.url)))
     else:
         abort(501)
 
@@ -167,7 +167,8 @@ def items():
 
     items = db.items.find(query)
     for item in items.sort('updated_at', DESCENDING)[pp*(page-1):pp*page]:
-        listing.append(Item(fs.get(_id=item['_id']), current_app.config))
+        listing.append(Item(fs.get(_id=item['_id']),
+                            current_app.config, urlscheme(request.url)))
 
     return json.dumps(listing[::-1])
 
@@ -220,14 +221,14 @@ def items_view(short_id):
         if obj.item_type == 'bookmark':
             return redirect(obj.redirect_url)
 
-        drop = Drop(obj, current_app.config)
+        drop = Drop(obj, current_app.config, urlscheme(request.url))
         if drop.item_type == 'image':
             return render_template('image.html', drop=drop)
         elif drop.item_type == 'text':
             return render_template('text.html', drop=drop)
         else:
             return render_template('other.html', drop=drop)
-    return jsonify(Item(obj, current_app.config))
+    return jsonify(Item(obj, current_app.config, urlscheme(request.url)))
 
 
 @login
@@ -266,7 +267,7 @@ def items_edit(object_id):
 
     db.items.save(item)
     item = fs.get(item['_id'])
-    return jsonify(Item(item, conf))
+    return jsonify(Item(item, conf, urlscheme(request.url)))
 
 
 @private
@@ -389,7 +390,7 @@ def bookmark():
             'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         }
 
-        item = Item(x, conf)
+        item = Item(x, conf, urlscheme(request.url))
         db.items.insert(x)
 
         items = acc['items']
