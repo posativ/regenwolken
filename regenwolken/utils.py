@@ -19,9 +19,12 @@ except ImportError:
     ImageFile = None
 
 
-def urlscheme(url):
+def urlscheme(request):
     """return the current scheme (HTTP or HTTPS)"""
-    return 'https' if url.startswith('https://') else 'http'
+
+    if request.url.startswith('https://'):
+        return 'https'
+    return request.headers.get('X-Forwarded-Proto', 'http')
 
 
 def md5(data):

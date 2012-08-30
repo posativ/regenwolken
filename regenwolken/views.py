@@ -48,7 +48,7 @@ def index():
         if obj is None:
             abort(400)
         else:
-            return jsonify(Item(obj, config, urlscheme(request.url)))
+            return jsonify(Item(obj, config, urlscheme(request)))
     else:
         abort(501)
 
@@ -168,8 +168,7 @@ def items():
     items = db.items.find(query)
     for item in items.sort('updated_at', DESCENDING)[pp*(page-1):pp*page]:
         listing.append(Item(fs.get(_id=item['_id']),
-                            current_app.config, urlscheme(request.url)))
-
+                            current_app.config, urlscheme(request)))
     return json.dumps(listing[::-1])
 
 
@@ -221,14 +220,14 @@ def items_view(short_id):
         if obj.item_type == 'bookmark':
             return redirect(obj.redirect_url)
 
-        drop = Drop(obj, current_app.config, urlscheme(request.url))
+        drop = Drop(obj, current_app.config, urlscheme(request))
         if drop.item_type == 'image':
             return render_template('image.html', drop=drop)
         elif drop.item_type == 'text':
             return render_template('text.html', drop=drop)
         else:
             return render_template('other.html', drop=drop)
-    return jsonify(Item(obj, current_app.config, urlscheme(request.url)))
+    return jsonify(Item(obj, current_app.config, urlscheme(request)))
 
 
 @login
@@ -267,7 +266,7 @@ def items_edit(object_id):
 
     db.items.save(item)
     item = fs.get(item['_id'])
-    return jsonify(Item(item, conf, urlscheme(request.url)))
+    return jsonify(Item(item, conf, urlscheme(request)))
 
 
 @private
@@ -390,7 +389,7 @@ def bookmark():
             'updated_at': strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
         }
 
-        item = Item(x, conf, urlscheme(request.url))
+        item = Item(x, conf, urlscheme(request))
         db.items.insert(x)
 
         items = acc['items']
