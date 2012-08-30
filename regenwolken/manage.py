@@ -261,6 +261,8 @@ def main():
                     default=False, help='purge account and its files'),
         make_option('--all', dest='all', action='store_true',
                     default=False, help='select ALL'),
+        make_option('--conf', dest="conf", default="regenwolken.cfg", metavar="FILE",
+                    help="regenwolken configuration")
     ]
 
     parser = OptionParser(option_list=options, usage=usage)
@@ -273,6 +275,9 @@ def main():
     app = Flask(__name__)
     app.config.from_object('regenwolken.utils.conf')
     app.config.from_envvar('REGENWOLKEN_SETTINGS', silent=True)
+
+    path = options.conf if options.conf.startswith('/') else '../' + options.conf
+    app.config.from_pyfile(path, silent=True)
 
     if 'info' in args:
         info(app.config)
