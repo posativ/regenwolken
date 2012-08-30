@@ -38,6 +38,10 @@ class Regenwolken(flask.Flask):
         self.config.from_object('regenwolken.utils.conf')
         self.config.from_envvar('REGENWOLKEN_SETTINGS', silent=True)
 
+        if len(sys.argv) > 1:
+            path = sys.argv[1] if sys.argv[1].startswith('/') else '../' + sys.argv[1]
+            self.config.from_pyfile(path, silent=True)
+
         self.setup_routes()
         self.setup_mongodb()
         self.setup_extensions()
