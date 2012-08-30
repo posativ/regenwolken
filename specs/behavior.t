@@ -15,8 +15,9 @@ Does it actually works?
 
 If we do not sleep here, cram says "Fuck you" and you fall in deep depressions
   $ sleep 1
+  $ cloudapp service localhost:3000
 
-  $ cloudapp --service localhost:3000 -y register foo 1234
+  $ cloudapp -y register foo 1234
   Successfully registered but your account isn't currently activated.
   Saving login to local login storage .+ (re)
 
@@ -24,17 +25,17 @@ If we do not sleep here, cram says "Fuck you" and you fall in deep depressions
   `foo` activated
 
   $ echo "Hello World" > README.md
-  $ cloudapp --service localhost:3000 upload README.md
+  $ cloudapp upload README.md
   Created item \w+, URL: (re)
   http://localhost:3000/\w+ (re)
 
-  $ cloudapp --service localhost:3000 list --disable-colors
+  $ cloudapp list --disable-colors
   SLUG       p=private, d=deleted
   \w+        -- unknown   [^ ]+ [^ ]+ http://localhost:3000/\w+        README.md (re)
 
   $ echo "Foo Bar " > foo.txt
-  $ URL=$(cloudapp --service localhost:3000 upload foo.txt | tail -n 1)
-  $ cloudapp --service localhost:3000 view $(basename $URL)
+  $ URL=$(cloudapp upload foo.txt | tail -n 1)
+  $ cloudapp view $(basename $URL)
   Details for \w+: (re)
     Name:     foo.txt
     Type:     text
@@ -44,14 +45,14 @@ If we do not sleep here, cram says "Fuck you" and you fall in deep depressions
     Created:  ??. ??? ???? ??:??:?? (glob)
     Updated:  ??. ??? ???? ??:??:?? (glob)
 
-  $ cloudapp --service localhost:3000 private $(basename $URL) > /dev/null
-  $ cloudapp --service localhost:3000 list --disable-colors
+  $ cloudapp private $(basename $URL) > /dev/null
+  $ cloudapp list --disable-colors
   SLUG       p=private, d=deleted
   \w+        -- unknown   [^ ]+ [^ ]+ http://localhost:3000/\w+        README.md (re)
   \w+        p- text      [^ ]+ [^ ]+ http://localhost:3000/\w+        foo.txt (re)
 
-  $ cloudapp --service localhost:3000 public $(basename $URL) > /dev/null
-  $ cloudapp --service localhost:3000 list --disable-colors
+  $ cloudapp public $(basename $URL) > /dev/null
+  $ cloudapp list --disable-colors
   SLUG       p=private, d=deleted
   \w+        -- unknown   [^ ]+ [^ ]+ http://localhost:3000/\w+        README.md (re)
   \w+        -- text      [^ ]+ [^ ]+ http://localhost:3000/\w+        foo.txt (re)
@@ -59,35 +60,35 @@ If we do not sleep here, cram says "Fuck you" and you fall in deep depressions
 Delete an item (note that this will *not* actually delete the item but mark it as deleted). Next
 we will recover it.
 
-  $ cloudapp --service localhost:3000 delete $(basename $URL) > /dev/null
-  $ cloudapp --service localhost:3000 list --disable-colors
+  $ cloudapp delete $(basename $URL) > /dev/null
+  $ cloudapp list --disable-colors
   SLUG       p=private, d=deleted
   \w+        -- unknown   [^ ]+ [^ ]+ http://localhost:3000/\w+        README.md (re)
 
-  $ cloudapp --service localhost:3000 recover $(basename $URL) > /dev/null
-  $ cloudapp --service localhost:3000 list --disable-colors
+  $ cloudapp recover $(basename $URL) > /dev/null
+  $ cloudapp list --disable-colors
   SLUG       p=private, d=deleted
   \w+        -- unknown   [^ ]+ [^ ]+ http://localhost:3000/\w+        README.md (re)
   \w+        -- text      [^ ]+ [^ ]+ http://localhost:3000/\w+        foo.txt (re)
 
 But we have a kill switch... let's try.
 
-  $ cloudapp --service localhost:3000 delete $(basename $URL) > /dev/null
+  $ cloudapp delete $(basename $URL) > /dev/null
   $ curl -su foo:1234 --digest -H "Accept: application/json" -X POST http://localhost:3000/items/trash
-  $ cloudapp --service localhost:3000 list --disable-colors --deleted
+  $ cloudapp list --disable-colors --deleted
   SLUG       p=private, d=deleted
   \w+        -- unknown   [^ ]+ [^ ]+ http://localhost:3000/\w+        README.md (re)
 
 So now back to some basic stuff. Try to change our password to a more difficult one.
 
-  $ cloudapp --service localhost:3000 change -y password 123456 > /dev/null
+  $ cloudapp change -y password 123456 > /dev/null
   $ (curl -sI -u foo:123456 --digest http://localhost:3000/items | grep FORBIDDEN)
   [1]
 
 Try the URL shortening service.
 
-  $ URL=$(cloudapp --service localhost:3000 bookmark foo http://google.com/ | tail -n 1)
-  $ cloudapp --service localhost:3000 list --disable-colors
+  $ URL=$(cloudapp bookmark foo http://google.com/ | tail -n 1)
+  $ cloudapp list --disable-colors
   SLUG       p=private, d=deleted
   \w+        -- unknown   [^ ]+ [^ ]+ http://localhost:3000/\w+        README.md (re)
   \w+        -- bookmark  [^ ]+ [^ ]+ http://localhost:3000/\w+        http://google.com/ -> foo (re)
