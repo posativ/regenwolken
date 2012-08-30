@@ -71,6 +71,10 @@ Thanks to [cmur2](https://github.com/cmur2) for his feature-rich
 
 ## Clients
 
+If you are working on a API or Client for CloudApp, please consider a configurable
+service url. That makes the hosts file hack unnecessary and as a side effect you
+can use HTTPS for all connections (feature is still `master`).
+
 ### working
 
 - Mac OS X [Cloud.app][app]
