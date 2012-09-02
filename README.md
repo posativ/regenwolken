@@ -48,14 +48,14 @@ so others don't need to modify their hosts.
 
 ## Setup and Configuration
 
-See [DEPLOYMENT.md](/posativ/regenwolken/blob/master/doc/DEPLOYMENT.md) and
-[CONFIG.rst](/posativ/regenwolken/blob/master/doc/CONFIG.rst) for details.
+See [DEPLOYMENT.md](https://github.com/posativ/regenwolken/blob/master/doc/DEPLOYMENT.md) and
+[CONFIG.rst](https://github.com//posativ/regenwolken/blob/master/doc/CONFIG.rst) for details.
 
 ## API implementation
 
 regenwolken provides all API calls to get Cloud.app working and has only few
 calls of [CloudApp's API](http://developer.getcloudapp.com/) missing. See
-[API.md](/posativ/regenwolken/blob/master/doc/API.md) for a complete list of
+[API.md](https://github.com/posativ/regenwolken/blob/master/doc/API.md) for a complete list of
 features. Below, the following are currently covered by the web interface.
 
     # -H "Accept: text/html"
