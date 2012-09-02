@@ -50,7 +50,11 @@ def index():
         else:
             return jsonify(Item(obj, config, urlscheme(request)))
     else:
-        abort(501)
+        return Response(status=501, content_type='text/html', response=(
+            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
+            '<title>501 Not Implemented</title>'
+            '<h1>Nope. Web Interface still not implemented.</h1>'
+            '<p>The server does not support the action requested by the browser.</p>'))
 
 
 @login
