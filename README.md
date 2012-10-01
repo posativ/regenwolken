@@ -49,7 +49,7 @@ so others don't need to modify their hosts.
 ## Setup and Configuration
 
 See [DEPLOYMENT.md](https://github.com/posativ/regenwolken/blob/master/doc/DEPLOYMENT.md) and
-[CONFIG.rst](https://github.com//posativ/regenwolken/blob/master/doc/CONFIG.rst) for details.
+[CONFIG.rst](https://github.com/posativ/regenwolken/blob/master/doc/CONFIG.rst) for details.
 
 ## API implementation
 
