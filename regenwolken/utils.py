@@ -67,12 +67,12 @@ def login(f):
         is present and denies access, if HTTP Digest Auth failed."""
 
         request = flask.request
-        content_type = 'text/html' if request.accept_mimetypes.accept_html else 'application/json'
+        usehtml = request.accept_mimetypes.accept_html
 
         if not request.authorization:
             response = Response(
                 'Unauthorized', 401,
-                content_type='%s; charset=utf-8' % content_type
+                content_type='text/html; charset=utf-8' if usehtml else 'application/json'
             )
             response.www_authenticate.set_digest(
                 'Application', algorithm='MD5',
