@@ -218,7 +218,7 @@ def items_view(short_id):
 
     if request.accept_mimetypes.accept_html:
 
-        if obj.deleted_at:
+        if getattr(obj, 'deleted_at', None):
             abort(404)
 
         if obj.item_type != 'image':
@@ -285,7 +285,7 @@ def blob(short_id, filename):
     fs = current_app.fs
 
     obj = fs.get(short_id=short_id)
-    if obj is None or obj.deleted_at:
+    if obj is None or getattr(obj, 'deleted_at', None):
         abort(404)
 
     # views++
@@ -427,7 +427,7 @@ def thumb(short_id):
     # if th: return Response(standard_b64decode(th), 200, content_type='image/png')
 
     rv = current_app.fs.get(short_id=short_id)
-    if rv is None or rv.deleted_at:
+    if rv is None or getattr(obj, 'deleted_at', None):
         abort(404)
 
     if rv.item_type == 'image' and current_app.config['THUMBNAILS']:
