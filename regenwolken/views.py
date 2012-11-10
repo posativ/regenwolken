@@ -218,6 +218,9 @@ def items_view(short_id):
 
     if request.accept_mimetypes.accept_html:
 
+        if obj.deleted_at:
+            abort(404)
+
         if obj.item_type != 'image':
             # the browser always loads the blob, so we don't want count it twice
             fs.inc_count(obj._id)
@@ -282,7 +285,7 @@ def blob(short_id, filename):
     fs = current_app.fs
 
     obj = fs.get(short_id=short_id)
-    if obj is None:
+    if obj is None or obj.deleted_at:
         abort(404)
 
     # views++
@@ -424,7 +427,7 @@ def thumb(short_id):
     # if th: return Response(standard_b64decode(th), 200, content_type='image/png')
 
     rv = current_app.fs.get(short_id=short_id)
-    if rv is None:
+    if rv is None or rv.deleted_at:
         abort(404)
 
     if rv.item_type == 'image' and current_app.config['THUMBNAILS']:
