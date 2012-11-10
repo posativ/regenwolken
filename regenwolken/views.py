@@ -14,7 +14,7 @@ from werkzeug import Response
 from pymongo import DESCENDING
 from flask import request, abort, jsonify, json, current_app, render_template, redirect
 
-from regenwolken.utils import login, private, A1, slug, thumbnail, clear, urlscheme, ppsize
+from regenwolken.utils import login, private, A1, slug, thumbnail, clear, urlscheme
 from regenwolken.specs import Item, Account, Drop
 
 
@@ -50,10 +50,16 @@ def index():
         else:
             return jsonify(Item(obj, config, urlscheme(request)))
     else:
+
         users = db.accounts.find().count()
         files = fs.gfs._GridFS__files.count()
-        size = ppsize(sum([f['length'] for f in fs.gfs._GridFS__files.find()]))
+        size = sum([f['length'] for f in fs.gfs._GridFS__files.find()])
         hits = sum([f['view_counter'] for f in fs.mdb.find()])
+
+        if request.args.get('format') == 'csv':
+            fields = [('users', users), ('files', files), ('size', size), ('hits', hits)]
+            return Response('\n'.join('%s,%s' % field for field in fields), 200)
+
         return Response(render_template("index.html", **locals()), 200, content_type="text/html")
 
 

@@ -11,7 +11,7 @@
 <ul style="list-style-type: none;">
     <li>Users: {{ users }}</li>
     <li>Files: {{ files }}</li>
-    <li>Size : {{ size }}</li>
+    <li>Size : {{ size | filesizeformat }}</li>
     <li>Hits : {{ hits }}</li>
 </ul>
 <p>– <a href="https://github.com/posativ/regenwolken#readme">See
