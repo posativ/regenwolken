@@ -19,7 +19,7 @@
 #
 # regenwolken is a CloudApp clone that works on your very own server.
 
-__version__ = '0.5.3'
+__version__ = '0.6.0'
 
 import sys
 import logging
