@@ -90,17 +90,19 @@ def login(f):
     return dec
 
 
-def private(f):
+class private:
     """Check for private items in the web interface and ask for credentials if necessary.
     """
-    app = flask.current_app
+    def __init__(self, condition):
+        self.condition = condition
 
-    def check(*args, **kwargs):
-        item = app.db.items.find_one({'short_id': kwargs['short_id']})
-        if item and not item['private']:
-            return f(*args, **kwargs)
-        return login(f)
-    return check
+    def __call__(self, f):
+        def check(*args, **kwargs):
+            item = flask.current_app.db.items.find_one({'short_id': kwargs['short_id']})
+            if (item and not item['private']) or not self.condition(flask.request):
+                return f(*args, **kwargs)
+            return login(f)(*args, **kwargs)
+        return check
 
 
 def slug(length=8, charset=string.ascii_lowercase+string.digits):

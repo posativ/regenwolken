@@ -203,6 +203,7 @@ def items_new():
     return jsonify(res)
 
 
+@private(lambda req: req.accept_mimetypes.accept_html)
 def items_view(short_id):
     """View item details or show them in the web interface based on Accept-Header or
     returns 404 if the requested short_id does not exist.
@@ -273,7 +274,7 @@ def items_edit(object_id):
     return jsonify(Item(item, conf, urlscheme(request)))
 
 
-@private
+@private(lambda req: True)
 def blob(short_id, filename):
     """returns bookmark or file either as direct download with human-readable,
     original filename or inline display using whitelisting"""
@@ -414,7 +415,7 @@ def bookmark():
         return jsonify(insert(data['name'], data['redirect_url']))
 
 
-@private
+@private(lambda req: True)
 def thumb(short_id):
     """returns 128px thumbnail, when possible and cached for 30 minutes,
     otherwise item_type icons."""
