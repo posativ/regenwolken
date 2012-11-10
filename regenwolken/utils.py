@@ -189,3 +189,12 @@ class Struct:
     """dict -> class, http://stackoverflow.com/questions/1305532/convert-python-dict-to-object"""
     def __init__(self, **entries):
         self.__dict__.update(entries)
+
+
+def ppsize(num):
+    '''pretty-print filesize.
+    http://blogmag.net/blog/read/38/Print_human_readable_file_size'''
+    for x in ['bytes','KiB','MiB','GiB','TB']:
+        if num < 1024.0:
+            return "%3.2f %s" % (num, x)
+        num /= 1024.0

@@ -14,7 +14,7 @@ from werkzeug import Response
 from pymongo import DESCENDING
 from flask import request, abort, jsonify, json, current_app, render_template, redirect
 
-from regenwolken.utils import login, private, A1, slug, thumbnail, clear, urlscheme
+from regenwolken.utils import login, private, A1, slug, thumbnail, clear, urlscheme, ppsize
 from regenwolken.specs import Item, Account, Drop
 
 
@@ -23,15 +23,15 @@ def index():
 
     -- http://developer.getcloudapp.com/upload-file"""
 
+    db, fs = current_app.db, current_app.fs
+    config, sessions = current_app.config, current_app.sessions
+
     if request.method == 'POST' and not request.accept_mimetypes.accept_html:
 
         try:
-            account = current_app.sessions.pop(request.form.get('key'))['account']
+            account = sessions.pop(request.form.get('key'))['account']
         except KeyError:
             abort(401)
-
-        db, fs = current_app.db, current_app.fs
-        config, sessions = current_app.config, current_app.sessions
 
         acc = db.accounts.find_one({'email': account})
         source = request.headers.get('User-Agent', 'Regenschirm++/1.0').split(' ', 1)[0]
@@ -50,11 +50,11 @@ def index():
         else:
             return jsonify(Item(obj, config, urlscheme(request)))
     else:
-        return Response(status=501, content_type='text/html', response=(
-            '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
-            '<title>501 Not Implemented</title>'
-            '<h1>Nope. Web Interface still not implemented.</h1>'
-            '<p>The server does not support the action requested by the browser.</p>'))
+        users = db.accounts.find().count()
+        files = fs.gfs._GridFS__files.count()
+        size = ppsize(sum([f['length'] for f in fs.gfs._GridFS__files.find()]))
+        hits = sum([f['view_counter'] for f in fs.mdb.find()])
+        return Response(render_template("index.html", **locals()), 200, content_type="text/html")
 
 
 @login

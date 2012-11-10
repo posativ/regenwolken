@@ -19,14 +19,7 @@ from pymongo import Connection
 from gridfs import GridFS
 from gridfs.errors import NoFile
 
-
-def ppsize(num):
-    '''pretty-print filesize.
-    http://blogmag.net/blog/read/38/Print_human_readable_file_size'''
-    for x in ['bytes','KiB','MiB','GiB','TB']:
-        if num < 1024.0:
-            return "%3.2f %s" % (num, x)
-        num /= 1024.0
+from regenwolken.utils import ppsize
 
 
 def tdelta(input):
