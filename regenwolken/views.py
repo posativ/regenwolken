@@ -50,7 +50,6 @@ def index():
         else:
             return jsonify(Item(obj, config, urlscheme(request)))
     else:
-
         users = db.accounts.find().count()
         files = fs.gfs._GridFS__files.count()
         size = sum([f['length'] for f in fs.gfs._GridFS__files.find()])

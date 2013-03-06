@@ -24,10 +24,17 @@ __version__ = '0.6.0'
 import sys
 import logging
 
+from SocketServer import ThreadingMixIn
+from wsgiref.simple_server import WSGIServer, make_server
+
 import flask
 import pymongo
 
 from regenwolken import views, mongonic
+
+
+class ThreadedWSGIServer(ThreadingMixIn, WSGIServer):
+    pass
 
 
 class Regenwolken(flask.Flask):
@@ -131,4 +138,7 @@ class Regenwolken(flask.Flask):
 def main():
 
     app = Regenwolken()
-    app.run(host=app.config['BIND_ADDRESS'], port=app.config['PORT'])
+    httpd = make_server(
+        app.config['BIND_ADDRESS'], app.config['PORT'],
+        app, server_class=ThreadedWSGIServer)
+    httpd.serve_forever()
