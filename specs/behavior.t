@@ -16,6 +16,7 @@ Does it actually works?
 If we do not sleep here, cram says "Fuck you" and you fall in deep depressions
   $ sleep 1
   $ cloudapp service localhost:3000
+  New service saved.
 
   $ cloudapp -y register foo 1234
   Successfully registered but your account isn't currently activated.
@@ -26,7 +27,6 @@ If we do not sleep here, cram says "Fuck you" and you fall in deep depressions
 
   $ echo "Hello World" > README.md
   $ cloudapp upload README.md
-  Created item \w+, URL: (re)
   http://localhost:3000/\w+ (re)
 
   $ cloudapp list --disable-colors
