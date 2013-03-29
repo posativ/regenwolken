@@ -67,8 +67,8 @@ features. Below, the following are currently covered by the web interface.
     /thumb/<short_id>          - GET thumbnail of item
 
 Thanks to [cmur2](https://github.com/cmur2) for his feature-rich
-[CLI](https://github.com/cmur2/cloudapp-cli) (with HTTPS support!) and help to
-build this service!
+[CLI](https://github.com/cmur2/cloudapp-power-cli) (with HTTPS support!)
+and help to build this service!
 
 ## Clients
 
@@ -82,9 +82,11 @@ can use HTTPS for all connections (feature is still in master).
 - [Cloudette](http://cloudetteapp.com/) – free CloudApp iPhone client, works flawlessly
 - [BlueNube](http://bluenubeapp.com/) – 1,99$ iPad client
 - [Stratus](http://www.getstratusapp.com/) – CloudApp Client for iOS (iPhone/iPad); add `127.0.0.1 ws.pusherapp.com` to /etc/hosts as well.
-- [cloudapp-cli](https://github.com/cmur2/cloudapp-cli) – commandline tool
+- [cloudapp-power-cli](https://github.com/cmur2/cloudapp-power-cli) – feature-rich commandline tool
 - [JCloudApp](https://github.com/cmur2/jcloudapp) – cross-platform Cloud.app widget in Java (supports HTTPS with regenwolken!)
 - [gloudapp](https://github.com/cmur2/gloudapp) – linux+GTK-based client
+
+Do not use the official `cloudapp-cli` app, it is still beta, has much fewer features and does not support other services out-of-the-box.
 
 ### failing clients
 
