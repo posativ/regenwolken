@@ -31,8 +31,13 @@ Modify /etc/hosts, launch regenwolken and register a new account
     [... open Cloud.app or another client and register a new account]
     $ rwctl activate USERNAME
 
-You can change that behavior to instantly activate new users. See the configuration
-part below.
+You can change that behavior to instantly activate new users using a
+configuration file such as `/path/to/rw.cfg` with the following:
+
+    $ cat /path/to/rw.cfg
+    PUBLIC_REGISTRATION = True
+    $ export REGENWOLKEN_SETTINGS=/path/to/rw.cfg
+    $ regenwolken
 
 ## How to use regenwolken
 
