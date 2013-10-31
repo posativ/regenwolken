@@ -128,10 +128,10 @@ class Regenwolken(flask.Flask):
                 self.config['MARKDOWN_FORMATTING'] = False
 
         try:
-            import ImageFile
+            import PIL
         except ImportError:
             if self.config['THUMBNAILS']:
-                print >> sys.stderr, "'PIL' not found, thumbnailing disabled"
+                print >> sys.stderr, "'PIL' not found, thumbnails disabled"
                 self.config['THUMBNAILS'] = False
 
 

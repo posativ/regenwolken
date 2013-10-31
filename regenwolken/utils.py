@@ -14,7 +14,7 @@ import flask
 from werkzeug import Response
 
 try:
-    import ImageFile
+    from PIL import ImageFile
 except ImportError:
     ImageFile = None
 
