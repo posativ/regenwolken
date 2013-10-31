@@ -7,7 +7,7 @@ one malus: you have do edit your `/etc/hosts`.
 
 #### open server
 
-I've set up a server open for everyone. Simply, add `213.218.178.67 my.cl.ly`
+I've set up a server open for everyone. Simply, add `134.255.239.78 my.cl.ly`
 to your `/etc/hosts`. Items older than three days will be purged at midnight
 (only a small vserver). Happy testing!
 
@@ -22,7 +22,7 @@ of choice (Debian Squeeze!).
 Now install regenwolken and its dependencies:
 
     $ easy_install regenwolken
-    $ easy_install pygments PIL markdown  # optional
+    $ easy_install pygments Pillow markdown  # optional
 
 Modify /etc/hosts, launch regenwolken and register a new account
 
