@@ -21,6 +21,10 @@ from gridfs.errors import NoFile
 
 from regenwolken.utils import ppsize
 
+log = logging.getLogger('regenwolken')
+log.addHandler(logging.StreamHandler())
+log.setLevel(logging.INFO)
+
 
 def tdelta(input):
     """converts human-readable time deltas to datetime.timedelta.
@@ -261,10 +265,6 @@ def main():
     parser = OptionParser(option_list=options, usage=usage)
     (options, args) = parser.parse_args()
 
-    log = logging.getLogger('regenwolken')
-    log.addHandler(logging.StreamHandler())
-    log.setLevel(logging.INFO)
-
     app = Flask(__name__)
     app.config.from_object('regenwolken.utils.conf')
     app.config.from_envvar('REGENWOLKEN_SETTINGS', silent=True)
@@ -282,7 +282,5 @@ def main():
         purge(app.config, options, args)
     elif 'repair' in args:
         repair(app.config, options)
-    elif 'files' in args:
-        pass
     else:
         parser.print_help()
