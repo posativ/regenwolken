@@ -142,3 +142,11 @@ def main():
         app.config['BIND_ADDRESS'], app.config['PORT'],
         app, server_class=ThreadedWSGIServer)
     httpd.serve_forever()
+
+
+try:
+    import uwsgi
+except ImportError:
+    pass
+else:
+    application = Regenwolken()
